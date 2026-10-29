@@ -31,6 +31,8 @@
 .menu .m-foot { margin-top: 30px; font-size: 11px; color: var(--ink-faint); letter-spacing: .05em; }
 
 @media (max-height: 420px) {
+  .menu .m-title { font-size: clamp(26px, 9vh, 44px); }
+  .menu .col { justify-content: flex-start; overflow-y: auto; }
   .menu .m-sub { margin-bottom: 14px; }
   .menu .m-item { padding: 6px 4px; min-height: 36px; }
 }

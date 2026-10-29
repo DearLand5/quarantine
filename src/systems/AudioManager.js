@@ -20,6 +20,8 @@ export class AudioManager {
     this.unsubs = [
       bus.on('settings:changed', () => this.applyVolumes()),
       bus.on('sound:play', (e) => this.play(e.name, e)),
+      bus.on('sound:loop', (e) => this.loop(e.id, e.name, e)),
+      bus.on('sound:stopLoop', (e) => this.stopLoop(e.id, e.fade)),
     ];
   }
 

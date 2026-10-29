@@ -11,7 +11,7 @@ export function createInitialState() {
     time: t('21:40'),               // игровые минуты
     timeScale: 10,                   // игровых секунд за реальную секунду
     chapter: 1,
-    player: { x: -2.6, z: -6.4, yaw: Math.PI * 0.85, pitch: -0.05, crouch: false, flashlight: false, flashBattery: 100 },
+    player: { x: -2.6, z: -6.4, yaw: -0.9, pitch: -0.05, crouch: false, flashlight: false, flashBattery: 100 },
     flags: {},
     counters: {},
     world: {

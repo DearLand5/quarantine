@@ -21,7 +21,7 @@
 .phone .screen {
   position: absolute; inset: calc(var(--ph-h) * .012); border-radius: calc(var(--ph-h) * .05);
   overflow: hidden; background: #0e1110; color: #e6e3d9;
-  font-size: calc(var(--ph-h) * .019);
+  font-size: max(12.5px, calc(var(--ph-h) * .019));
   display: flex; flex-direction: column;
 }
 .phone .screen.glitch { animation: phGlitch .25s steps(2) 3; }
@@ -29,6 +29,18 @@
   0% { filter: none; transform: none; }
   50% { filter: hue-rotate(40deg) contrast(1.6); transform: translateX(3px) skewX(2deg); }
   100% { filter: saturate(0) brightness(1.4); transform: translateX(-2px); }
+}
+
+/* Низкий горизонтальный экран (телефон в ландшафте): «смартфон» шире, чтобы текст оставался читаемым */
+@media (orientation: landscape) and (max-height: 540px) {
+  .phone-layer { padding-right: calc(2vw + var(--safe-r)); }
+  .phone { --ph-h: calc(100vh - 12px); width: min(58vw, 440px); border-radius: 18px; padding: 6px; }
+  .phone .screen { inset: 6px; border-radius: 14px; }
+  .ph-status .notch { display: none; }
+  .ph-home .grid { grid-template-columns: repeat(7, 1fr); gap: .6em .3em; }
+  .ph-home .dock { display: none; }
+  .ph-home .widget { margin-bottom: .8em; padding: .6em .9em; }
+  .ph-home .widget .w-time { font-size: 1.5em; }
 }
 
 @media (orientation: portrait) {

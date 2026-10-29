@@ -60,8 +60,8 @@ button { font-family: inherit; color: inherit; }
 #fx-damage.on { opacity: 1; }
 
 #ui-root { position: absolute; inset: 0; pointer-events: none; }
-#ui-root > * { pointer-events: auto; }
-#ui-root > .passthrough { pointer-events: none; }
+/* Слои интерфейса сами решают, ловить ли касания: закрытые/прозрачные слои пропускают их в мир */
+.menu, .sheet, .dialogue, .inventory, .reader, .ending, .confirm, .edit-bar { pointer-events: auto; }
 
 .fade-layer {
   position: absolute; inset: 0; background: #000; pointer-events: none;

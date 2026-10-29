@@ -167,6 +167,11 @@ export const SEQUENCES = {
     { chat: 'house', from: 'zinaida', typing: 6, text: 'никто не отвечает сама пойду потихоньку' },
     { do: (c) => { c.setFlag('zina_walks'); c.closeChoice('inhaler_offer'); } },
   ],
+  inhaler_nobody_late: [
+    { chat: 'house', from: 'marina', typing: 3, text: 'Кирилл?.. Вы идёте?' },
+    { chat: 'house', from: 'zinaida', delay: 20, typing: 6, text: 'не дождалась я Кирюшу сама пойду потихоньку' },
+    { do: (c) => { c.setFlag('zina_walks'); c.quest.complete('inhaler'); } },
+  ],
   inhaler_done: [
     { chat: 'house', from: 'marina', delay: 4, typing: 5, text: 'Кирилл принёс. Соне легче, почти уснула. Зинаида Павловна, дай бог вам здоровья ❤️' },
     { chat: 'house', from: 'zinaida', delay: 3, typing: 6, text: 'ой да на здоровье Мариночка пусть спит ❤️ а Кирюша молодец' },
@@ -621,3 +626,44 @@ export const PHOTO_REACTIONS = [
     { from: '$with', text: 'темно, ничего не разобрать' },
   ] },
 ];
+
+// ---------------------------------------------------------------- ночь: стук в дверь
+Object.assign(SEQUENCES, {
+  knock_choice: [
+    { do: (c) => c.setVisible('marina') },
+    {
+      choice: {
+        id: 'knock_warn', chat: 'house',
+        options: [
+          { id: 'warn', text: 'Ко мне стучат три раза и говорят голосом Марины. Никому не открывайте!', intents: ['ask_knock', 'need_help', 'ask_52'], do: (c) => { c.setFlag('knock_warned'); c.broadcast('three_knocks'); c.clue('echo_voice'); }, next: 'knock_warn' },
+        ],
+      },
+    },
+  ],
+  knock_marina_choice: [
+    {
+      choice: {
+        id: 'knock_marina', chat: 'marina',
+        options: [
+          { id: 'ask', text: 'Марина, это вы сейчас стучите ко мне?', intents: ['ask_knock', 'ask_where', 'ask_who'], next: 'marina_denies' },
+        ],
+      },
+    },
+  ],
+  marina_denies: [
+    { chat: 'marina', from: 'marina', typing: 2, text: 'нет??' },
+    { chat: 'marina', from: 'marina', delay: 1, typing: 3, text: 'мы спим. у нас закрыто. Кирилл не открывайте пожалуйста' },
+    { do: (c) => { c.clue('echo_voice'); c.setFlag('marina_denied'); } },
+  ],
+  knock_ignored_safe: [
+    { chat: 'house', from: 'zinaida', delay: 18, typing: 9, text: 'мне сейчас постучали три раза голосом Кирюши я не открыла как он сказал' },
+    { chat: 'house', from: 'zinaida', delay: 6, typing: 4, text: 'постояло и ушло к пятьдесят второй я слышала' },
+    { chat: 'house', from: 'marina', delay: 4, text: 'Господи. Зинаида Павловна, не открывайте никому' },
+    { do: (c) => c.setFlag('aftermath_done') },
+  ],
+  nudge_home: [
+    { do: (c) => c.setVisible('marina') },
+    { chat: 'marina', from: 'marina', typing: 3, text: 'Кирилл, вы где? Вы в коридоре?' },
+    { chat: 'marina', from: 'marina', delay: 1, typing: 3, text: 'у вас под дверью кто-то стоит. я в глазок вижу. он не двигается' },
+  ],
+});

@@ -188,7 +188,7 @@ export class ChatManager {
           if (onlyCond) { run.step++; continue; }
         }
         if (step.do && !step.text && !step.from) { this.safe(() => step.do(this.ctx)); run.step++; continue; }
-        if (step.choice) { this.openChoice(run, step, chatId); return true; }
+        if (step.choice) { this.openChoice(run, step, step.choice.chat || chatId); return true; }
         if (step.run) {
           if (step.delay) { run.phase = 'runwait'; run.timer = step.delay; } else { this.runSequence(step.run); run.step++; }
           if (run.phase === 'runwait') return false;

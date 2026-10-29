@@ -134,7 +134,7 @@ export const WINDOWS = {
 
 // Светильники. circuit: apartment (кв. 47), corridor (этаж), neighbor (соседи), emergency (аварийный).
 export const FIXTURES = [
-  { id: 'L_room47', room: 'room47', x: -1.9, y: 2.42, z: -6.6, type: 'chandelier', color: 0xffd9a0, intensity: 5, range: 7, circuit: 'apartment', switch: 'sw_room47', on: false },
+  { id: 'L_room47', room: 'room47', x: -1.9, y: 2.42, z: -6.6, type: 'chandelier', color: 0xffd9a0, intensity: 5, range: 7, circuit: 'apartment', switch: 'sw_room47', on: true },
   { id: 'L_desk47', room: 'room47', x: -0.85, y: 1.15, z: -8.0, type: 'none', color: 0xffc27a, intensity: 2.2, range: 4, circuit: 'apartment', switch: 'sw_desk47', on: true },
   { id: 'L_hall47', room: 'hall47', x: 0, y: 2.45, z: -2.8, type: 'bulb', color: 0xffd6a0, intensity: 3, range: 5, circuit: 'apartment', switch: 'sw_hall47', on: true },
   { id: 'L_kitchen47', room: 'kitchen47', x: 2.85, y: 2.45, z: -5.8, type: 'plafond', color: 0xfff0d0, intensity: 4.5, range: 6.5, circuit: 'apartment', switch: 'sw_kitchen47', on: false },
@@ -178,4 +178,4 @@ export const NAV_EDGES = [
 export const NAV_DOORS = { 'f45|in45': 'd45', 'f48|in48': 'd48', 'f49|in49': 'd49', 'f51|in51': 'd51', 'c_10|stair_in': 'dStair' };
 
 // Зоны мобильной связи (дополнительно к значению signal комнаты).
-export const START_POSITION = { x: -2.6, z: -6.4, yaw: Math.PI * 0.85 };
+export const START_POSITION = { x: -2.6, z: -6.4, yaw: -0.9 };

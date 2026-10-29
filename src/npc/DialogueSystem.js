@@ -55,11 +55,11 @@ export class DialogueSystem {
       .filter((c) => !c.cond || this.safe(() => c.cond(this.ctx)))
       .map((c) => ({ text: typeof c.text === 'function' ? c.text(this.ctx) : c.text, index: c.index, tag: c.tag, seen: !!this.gs.flag(`dlg:${a.npc}:${nodeId}:${c.index}`) }));
     this.bus.emit('dialogue:line', {
-      npc: a.npc, speaker, name: speaker === 'player' ? 'Вы' : speaker === 'narrator' ? '' : (CHARACTERS[speaker]?.short || charName(speaker)),
-      text, choices, end: !!node.end && !choices.length, mood: node.mood,
+      npc: a.npc, speaker, name: node.name ?? (speaker === 'player' ? 'Вы' : speaker === 'narrator' ? '' : (CHARACTERS[speaker]?.short || charName(speaker))),
+      text, choices, end: !!node.end && !choices.length, mood: typeof node.mood === 'function' ? this.safe(() => node.mood(this.ctx)) : node.mood,
     });
     if (speaker !== 'player' && speaker !== 'narrator' && text) {
-      const voice = CHARACTERS[speaker]?.voice || { pitch: 150 };
+      const voice = CHARACTERS[speaker]?.voice || (speaker === 'voice' ? CHARACTERS.marina.voice : { pitch: 150 });
       this.bus.emit('npc:speak', { id: speaker, text, pitch: voice.pitch, duration: Math.min(4.5, 0.6 + text.length * 0.035) });
     }
   }

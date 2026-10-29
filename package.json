@@ -1,0 +1,12 @@
+{
+  "name": "topolinaya-14",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Тополиная, 14 — мобильный 3D survival horror в браузере (вертикальный срез, глава 1)",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node tools/check.mjs"
+  },
+  "license": "UNLICENSED"
+}

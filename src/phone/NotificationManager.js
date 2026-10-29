@@ -22,6 +22,7 @@ export class NotificationManager {
 
   onMessage({ chat, msg, incoming }) {
     if (!incoming || msg.sys) return;
+    if (this.gs.data.phone.battery <= 0) return;   // разряженный телефон молчит
     if (this.phoneOpen && this.viewingChat === chat) {
       this.sound('tap');
       return;

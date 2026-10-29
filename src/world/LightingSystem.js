@@ -10,7 +10,7 @@ export class LightingSystem {
     this.bus = bus;
     const scene = sceneManager.scene;
 
-    this.hemi = new THREE.HemisphereLight(0x5a6670, 0x1a1612, 0.32);
+    this.hemi = new THREE.HemisphereLight(0x5a6670, 0x1a1612, 0.55);
     scene.add(this.hemi);
     // Свет улицы через окна: слабый холодный направленный свет с севера
     this.moon = new THREE.DirectionalLight(0x8094b0, 0.22);
@@ -100,7 +100,7 @@ export class LightingSystem {
   }
 
   setFlashlight(on, battery) {
-    const base = on ? 9 * (0.35 + 0.65 * Math.min(1, battery / 40)) : 0;
+    const base = on ? 6 * (0.35 + 0.65 * Math.min(1, battery / 40)) : 0;
     this.flashIntensity = base;
   }
 
