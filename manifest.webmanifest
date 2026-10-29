@@ -1,0 +1,10 @@
+{
+  "name": "Тополиная, 14",
+  "short_name": "Тополиная 14",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0b0d0c",
+  "theme_color": "#0b0d0c",
+  "icons": [{ "src": "assets/images/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
