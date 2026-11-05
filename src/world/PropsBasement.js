@@ -32,32 +32,56 @@ function crystalTexture() {
   return tex;
 }
 
+let circleCache = null;
+function circleGeo() {
+  // единичный эллипс диаметром 1 (масштабируется под лужу)
+  return (circleCache ??= new THREE.CircleGeometry(0.5, 28));
+}
+
 function waterMat() {
-  if (!LAB_STATE.waterMat) LAB_STATE.waterMat = new THREE.MeshStandardMaterial({ color: 0x0b0f10, roughness: 0.04, metalness: 0.75, transparent: true, opacity: 0.85 });
+  if (!LAB_STATE.waterMat) LAB_STATE.waterMat = new THREE.MeshStandardMaterial({ color: 0x1b2a2e, roughness: 0.12, metalness: 0.15, transparent: true, opacity: 0.72, depthWrite: false });
   return LAB_STATE.waterMat;
 }
 
 Object.assign(PROPS, {
   lift_cabin(b) {
-    // Поручень, панель кнопок, зеркальная полоса, надпись грузоподъёмности
-    b.box('chrome', 0.03, 0.03, 0.8, -0.42, 0.92, -0.05);
-    b.box('chrome', 0.03, 0.03, 0.8, 0.42, 0.92, -0.05);
-    b.box('metal', 0.04, 0.5, 0.18, 0.43, 0.85, 0.25);
-    for (let i = 0; i < 6; i++) b.cyl('plastic_beige', 0.018, 0.018, 0.012, 0.415, 0.95 + i * 0.055, 0.22 + (i % 2) * 0.05, 8).rotation.z = Math.PI / 2;
-    b.cyl('lamp_red', 0.022, 0.022, 0.012, 0.415, 0.9, 0.3, 8).rotation.z = Math.PI / 2;
-    b.box('mirror', 0.8, 0.5, 0.01, 0, 1.15, -0.49);
-    b.plane(b.a.signMaterial(['ЛИФТ ПАССАЖИРСКИЙ', 'г/п 320 кг · 4 чел.', 'КМЗ 1980'], { w: 256, h: 128, bg: '#c8c1a8', size: 20, pad: 10 }), 0.2, 0.1, -0.44, 1.5, 0.1, 0, Math.PI / 2);
-  },
-  elevator_doors(b) {
-    // Портал лифта с проёмом и две раздвижные створки (анимируются сюжетом)
-    b.box('metal', 0.22, 2.2, 0.08, -0.53, 0, 0);
-    b.box('metal', 0.22, 2.2, 0.08, 0.53, 0, 0);
-    b.box('metal', 1.28, 0.22, 0.08, 0, 1.98, 0);
-    const l = b.dynamic(b.box('door_metal', 0.41, 1.96, 0.025, -0.205, 0, 0.05));
-    const r = b.dynamic(b.box('door_metal', 0.41, 1.96, 0.025, 0.205, 0, 0.05));
-    b.parts.left = l; b.parts.right = r;
-    b.box('black', 0.005, 1.96, 0.03, 0, 0, 0.055);
-    b.plane(b.a.signMaterial(['П'], { w: 64, h: 64, bg: '#111', fg: '#c84', size: 44, pad: 4 }), 0.08, 0.08, 0, 2.1, 0.045);
+    // Кабина 0.9 × 1.01 м, высота 2.15; локально: x ±0.45, z -0.5 (задняя стена) … +0.51 (стена с дверью), дверь на юге (+Z).
+    const XW = 0.45, ZB = -0.5, ZF = 0.51;
+    // Нижняя деревянная панель по трём стенам
+    b.box('wood_dark', 0.9, 0.9, 0.012, 0, 0, ZB + 0.006);
+    b.box('wood_dark', 0.012, 0.9, 1.0, -XW + 0.006, 0, 0.005);
+    b.box('wood_dark', 0.012, 0.9, 1.0, XW - 0.006, 0, 0.005);
+    // Верхняя часть стен — светлый пластик (иначе тёмный металл стен кабины проваливается во мрак)
+    b.box('plastic_beige', 0.9, 1.25, 0.004, 0, 0.9, ZB + 0.002);
+    b.box('plastic_beige', 0.004, 1.25, 0.99, -XW + 0.002, 0.9, -0.005);
+    b.box('plastic_beige', 0.004, 1.25, 0.99, XW - 0.002, 0.9, -0.005);
+    // Поручни на кронштейнах: задний и два боковых (с восточной стороны — до панели кнопок)
+    b.box('chrome', 0.76, 0.03, 0.03, 0, 0.9, ZB + 0.045);
+    for (const [x, z0, z1] of [[-XW + 0.045, ZB + 0.03, 0.2], [XW - 0.045, ZB + 0.03, 0.02]]) {
+      b.box('chrome', 0.03, 0.03, z1 - z0, x, 0.9, (z0 + z1) / 2);
+      for (const z of [z0 + 0.04, z1 - 0.04]) b.box('chrome', 0.012, 0.012, 0.045, x + (x < 0 ? -0.0225 : 0.0225), 0.9 + 0.009, z).rotation.y = Math.PI / 2;
+    }
+    for (const x of [-0.34, 0.34]) b.box('chrome', 0.012, 0.012, 0.03, x, 0.909, ZB + 0.015);
+    // Зеркало в раме на задней стене
+    b.box('chrome', 0.74, 0.86, 0.008, 0, 0.98, ZB + 0.004);
+    b.box('mirror', 0.7, 0.82, 0.006, 0, 1.0, ZB + 0.011);
+    // Панель кнопок на восточной стене у двери (z 0.12..0.40, y 0.95..1.45): hit-зона 'lift_panel' смотрит сюда
+    b.box('metal', 0.02, 0.5, 0.2, XW - 0.01, 0.95, 0.26);
+    b.box('black', 0.004, 0.46, 0.16, XW - 0.022, 0.97, 0.26);
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) {
+      const m = b.cyl('plastic_beige', 0.016, 0.016, 0.01, 0, 0, 0, 10);
+      m.rotation.z = Math.PI / 2; m.position.set(XW - 0.027, 1.37 - i * 0.075, 0.22 + j * 0.08);
+    }
+    const alarm = b.cyl('lamp_red', 0.018, 0.018, 0.01, 0, 0, 0, 10);
+    alarm.rotation.z = Math.PI / 2; alarm.position.set(XW - 0.027, 1.06, 0.30);
+    const stop = b.cyl('plastic_dark', 0.018, 0.018, 0.01, 0, 0, 0, 10);
+    stop.rotation.z = Math.PI / 2; stop.position.set(XW - 0.027, 1.06, 0.22);
+    // Табличка грузоподъёмности на западной стене
+    b.plane(b.a.signMaterial(['ЛИФТ ПАССАЖИРСКИЙ', 'г/п 320 кг · 4 чел.', 'КМЗ 1980'], { w: 256, h: 128, bg: '#c8c1a8', size: 20, pad: 10 }), 0.2, 0.1, -XW + 0.0045, 1.5, 0.15, 0, Math.PI / 2);
+    // Окантовка проёма со стороны кабины и порог
+    for (const s of [-1, 1]) b.box('metal', 0.05, 1.97, 0.02, s * 0.425, 0, ZF - 0.01);
+    b.box('metal', 0.9, 0.03, 0.02, 0, 1.95, ZF - 0.01);
+    b.box('metal', 0.82, 0.014, 0.1, 0, 0, ZF - 0.05);
   },
   pipes(b, o) {
     const len = o.len || 6, y = o.y || 2.1, n = o.n || 2;
@@ -69,19 +93,25 @@ Object.assign(PROPS, {
     for (let x = -len / 2 + 0.5; x < len / 2; x += 1.6) b.box('rust', 0.05, 0.3, 0.05, x, y - 0.25, 0.04);
   },
   puddle(b, o) {
-    const m = new THREE.Mesh(planeGeo(o.w || 1.5, o.d || 1), waterMat());
-    m.rotation.x = -Math.PI / 2;
-    m.position.y = 0.006;
-    m.userData.dynamic = true;
-    m.renderOrder = 2;
-    b.group.add(m);
+    // Лужа — два перекрывающихся эллипса (не прямоугольник), чуть выше пола
+    const w = o.w || 1.5, d = o.d || 1;
+    const blobs = [[0, 0, 1, 1, 0.006], [w * 0.2, -d * 0.12, 0.62, 0.7, 0.008]];
+    for (const [x, z, sx, sz, y] of blobs) {
+      const m = new THREE.Mesh(circleGeo(), waterMat());
+      m.rotation.x = -Math.PI / 2;
+      m.scale.set(w * sx, d * sz, 1);
+      m.position.set(x, y, z);
+      m.userData.dynamic = true;
+      m.renderOrder = 2;
+      b.group.add(m);
+    }
   },
   storage_cells(b, o) {
     // Деревянные двери сараек с навесными замками; одна приоткрыта — за ней темнота
     const n = o.n || 3, w = 1.3;
     for (let i = 0; i < n; i++) {
       const x = (i - (n - 1) / 2) * (w + 0.08);
-      b.box('black', w, 1.9, 0.02, x, 0, 0.005);
+      b.box('black', w + 0.08, 1.9, 0.02, x, 0, 0.005);
       const open = o.open === i;
       for (let s = 0; s < 6; s++) {
         const slat = b.box('wood_dark', w / 6 - 0.03, 1.85, 0.03, x - w / 2 + w / 12 + s * (w / 6) + (open ? 0.25 : 0), 0.02, open ? 0.18 + s * 0.04 : 0.03);
@@ -111,7 +141,7 @@ Object.assign(PROPS, {
     // Старый котёл: лежащий цилиндр на опорах, топка, манометр
     const body = b.cyl('rust', 0.7, 0.7, 2.2, 0, 0.55, 0, 16);
     body.rotation.x = Math.PI / 2; body.position.y = 1.25;
-    for (const z of [-0.8, 0.8]) b.box('metal', 1.2, 0.55, 0.12, 0, 0, z);
+    for (const z of [-0.8, 0.8]) b.box('rust', 1.2, 0.55, 0.12, 0, 0, z);
     b.box('black', 0.5, 0.5, 0.06, 0, 0.95, 1.12);
     b.cyl('chrome', 0.09, 0.09, 0.04, 0.4, 1.7, 1.12, 12).rotation.x = Math.PI / 2;
     b.cyl('rust', 0.12, 0.12, 1.4, 0, 1.9, -0.6, 8);
@@ -124,9 +154,15 @@ Object.assign(PROPS, {
     b.box('metal', 0.08, 0.05, 1.0, -0.46, 0, 0);
     b.box('metal', 0.08, 0.05, 1.0, 0.46, 0, 0);
     b.plane('black', 0.86, 0.86, 0, 0.004, 0, -Math.PI / 2);
-    const lid = b.box('rust', 0.95, 0.05, 0.95, 0, 0.0, -0.95);
-    lid.rotation.x = -1.2; lid.position.set(0, 0.45, -0.7);
-    b.plane(b.a.signMaterial(['ОБЪЕКТ 17', 'ВХОД ПО ДОПУСКУ', 'уровень 1'], { w: 256, h: 128, bg: '#3a3026', fg: '#c8b28a', size: 22, pad: 14 }), 0.6, 0.3, 0, 0.47, -0.69, -0.37);
+    // Крышка откинута назад на задней кромке рамы (шарнир на z=-0.5, угол 100° от закрытого положения)
+    const L = 0.95, al = 100 * Math.PI / 180;
+    const lid = b.box('rust', 0.95, 0.05, L, 0, 0, 0);
+    lid.position.set(0, 0.05 + (L / 2) * Math.sin(al), -0.5 + (L / 2) * Math.cos(al));
+    lid.rotation.x = -al;
+    // Табличка на лицевой (обращённой к игроку) стороне крышки
+    const ny = -Math.cos(al), nz = Math.sin(al);
+    b.plane(b.a.signMaterial(['ОБЪЕКТ 17', 'ВХОД ПО ДОПУСКУ', 'уровень 1'], { w: 256, h: 128, bg: '#3a3026', fg: '#c8b28a', size: 22, pad: 14 }), 0.6, 0.3,
+      0, lid.position.y + ny * 0.0275, lid.position.z + nz * 0.0275, -al + Math.PI / 2);
     for (const x of [-0.2, 0.2]) b.box('metal', 0.03, 0.5, 0.03, x, 0, 0.4);
     b.col(0, 0, 1.05, 1.05);
   },
@@ -150,8 +186,9 @@ Object.assign(PROPS, {
       LAB_STATE.crystalMat.name = 'crystal#unique';
     }
     const w = o.w || 6;
-    const m = new THREE.Mesh(planeGeo(w, 2.2), LAB_STATE.crystalMat);
-    m.position.set(0, 1.3, 0.012);
+    const ch = o.h || 2.66;
+    const m = new THREE.Mesh(planeGeo(w, ch), LAB_STATE.crystalMat);
+    m.position.set(0, ch / 2, 0.012);
     m.userData.dynamic = true;
     b.group.add(m);
   },

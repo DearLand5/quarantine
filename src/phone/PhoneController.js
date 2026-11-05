@@ -352,6 +352,7 @@ export class PhoneController {
   // ------------------------------------------------------------ эффекты
   innerBanner(n) {
     if (this.route.app === 'chat' && this.route.params.chat === n.chat) return;
+    if (this.route.app === 'call') return;   // во время звонка сообщения не перекрывают экран
     const b = el('div', { class: 'banner', style: { position: 'absolute', left: '4%', right: '4%', top: '2.6em', zIndex: 8 } }, [
       el('div', { class: 'ava', style: { background: CHARACTERS[n.from]?.color || '#888' }, text: CHARACTERS[n.from]?.initials || '•' }),
       el('div', { class: 'body' }, [el('div', { class: 'top' }, [el('b', { text: n.title })]), el('div', { class: 'text', text: n.sender ? `${n.sender}: ${n.text}` : n.text })]),

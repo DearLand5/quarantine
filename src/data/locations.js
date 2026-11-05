@@ -152,7 +152,7 @@ export const FIXTURES = [
   { id: 'L_lift', room: 'lifthall', x: 6.1, y: 2.52, z: -2.3, type: 'plafond', color: 0xe8e6c8, intensity: 2.6, range: 5, circuit: 'corridor', on: true },
   { id: 'L_stair', room: 'stair', x: 12.0, y: 2.27, z: 0, type: 'bulb', color: 0xffe2b0, intensity: 2.6, range: 7, circuit: 'corridor', on: true, flicker: 'slight' },
   { id: 'L_stair_mid', room: 'stair', x: 15.7, y: 4.1, z: 0, type: 'bulb', color: 0xffd9a0, intensity: 1.1, range: 6, circuit: 'corridor', on: true },
-  { id: 'L_emerg', room: 'corridor', x: 10.7, y: 2.35, z: 0, type: 'emergency', color: 0xff3020, intensity: 1.6, range: 7, circuit: 'emergency', on: true },
+  { id: 'L_emerg', room: 'corridor', x: 10.7, y: 2.35, z: 0, wallX: 11, type: 'emergency', color: 0xff3020, intensity: 1.6, range: 7, circuit: 'emergency', on: true },
   { id: 'L_zina', room: 'room45', x: -8.3, y: 2.38, z: -5.6, type: 'chandelier', color: 0xffc98a, intensity: 3.5, range: 6, circuit: 'neighbor', on: true },
   { id: 'L_zina_hall', room: 'hall45', x: -8, y: 2.45, z: -2.4, type: 'bulb', color: 0xffcf98, intensity: 2, range: 4, circuit: 'neighbor', on: true },
   { id: 'L_h48', room: 'hall48', x: -8, y: 2.45, z: 2.4, type: 'bulb', color: 0xffe0b8, intensity: 2, range: 4, circuit: 'neighbor', on: true, glimpse: 'd48' },

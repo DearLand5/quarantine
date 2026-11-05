@@ -205,16 +205,53 @@ export class WorldBuilder {
       this.addStatic(m, room.id);
     }
     const def = WINDOWS[o.window] || {};
-    if (def.curtains) {
-      const mat = a.material('fabric');
-      for (const s of [-1, 1]) {
-        const c = new THREE.Mesh(boxGeo(horizontal ? 0.45 : 0.06, Math.min(2.4, (o.sill || 0) + h + 0.25), horizontal ? 0.06 : 0.45), mat);
-        const along = o.at + s * (w / 2 + 0.12);
-        const cy = c.geometry.parameters.height / 2 + 0.05;
-        if (horizontal) c.position.set(along, cy, line - outward * 0.08);
-        else c.position.set(line - outward * 0.08, cy, along);
-        this.addStatic(c, room.id);
-      }
+    if (def.curtains) this.buildCurtains(room, o, horizontal, line, outward, w);
+  }
+
+  /** Шторы: две складчатые портьеры по бокам окна на карнизе (не закрывают стекло). */
+  buildCurtains(room, o, horizontal, line, outward, w) {
+    const a = this.assets;
+    if (!this.curtainMat) {
+      this.curtainMat = a.material('fabric').clone();
+      this.curtainMat.name = 'curtain';
+      this.curtainMat.color.setHex(0xffffff);
+      this.curtainMat.side = THREE.DoubleSide;
+    }
+    const top = room.h - 0.1, bottom = 0.06, ch = top - bottom, cw = 0.42, folds = 5;
+    const geo = new THREE.PlaneGeometry(cw, ch, 30, 1);
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const u = pos.getX(i) / cw + 0.5;                       // 0..1 вдоль ткани
+      const y = pos.getY(i) / ch + 0.5;                       // 0 — низ, 1 — верх
+      // Складки: синусоида; внизу чуть глубже, у карниза собраны плотнее
+      pos.setZ(i, Math.sin(u * folds * Math.PI * 2) * (0.018 + 0.012 * (1 - y)));
+      pos.setX(i, pos.getX(i) * (1 - 0.06 * (1 - y)));        // подол чуть уже — ткань «висит»
+    }
+    geo.computeVertexNormals();
+    const rot = horizontal ? 0 : Math.PI / 2;
+    const place = (obj, along, y) => {
+      if (horizontal) obj.position.set(along, y, line - outward * 0.055);
+      else obj.position.set(line - outward * 0.055, y, along);
+      obj.rotation.y = rot;
+    };
+    for (const s of [-1, 1]) {
+      const c = new THREE.Mesh(geo, this.curtainMat);
+      place(c, o.at + s * (w / 2 + 0.12), bottom + ch / 2);
+      c.castShadow = false;
+      this.addStatic(c, room.id);
+    }
+    // Карниз с наконечниками
+    const rodLen = w + 0.9, ry = top + 0.03;
+    const rod = new THREE.Mesh(cylGeo(0.012, 0.012, rodLen, 8), a.material('brass'));
+    if (horizontal) rod.rotation.z = Math.PI / 2; else rod.rotation.x = Math.PI / 2;
+    place(rod, o.at, ry);
+    if (horizontal) rod.rotation.y = 0; else rod.rotation.y = 0;
+    this.addStatic(rod, room.id);
+    for (const e of [-1, 1]) {
+      const fin = new THREE.Mesh(sphereGeo(0.02, 8, 6), a.material('brass'));
+      place(fin, o.at + e * (rodLen / 2 + 0.01), ry);
+      fin.rotation.y = 0;
+      this.addStatic(fin, room.id);
     }
   }
 
@@ -313,23 +350,34 @@ export class WorldBuilder {
     const g = new THREE.Group();
     g.position.set(fx.x, fx.y, fx.z);
     let glow = null;
+    const up = (this.rooms.get(fx.room)?.h ?? 9) - fx.y;   // запас до потолка
     if (fx.type === 'plafond') {
       const base = new THREE.Mesh(cylGeo(0.2, 0.2, 0.03, 16), a.material('enamel'));
       base.position.y = 0.06;
       glow = new THREE.Mesh(sphereGeo(0.19, 14, 8), glowMat);
       glow.scale.set(1, 0.38, 1);
       g.add(base, glow);
+    } else if (fx.type === 'panel') {
+      // Плоский потолочный светильник (кабина лифта): рама и рассеиватель; y — центр рассеивателя у потолка
+      const frame = new THREE.Mesh(boxGeo(0.64, 0.02, 0.44), a.material('metal'));
+      frame.position.y = 0.005;
+      glow = new THREE.Mesh(boxGeo(0.58, 0.02, 0.38), glowMat);
+      glow.position.y = -0.004;
+      g.add(frame, glow);
     } else if (fx.type === 'bulb') {
-      const wire = new THREE.Mesh(cylGeo(0.006, 0.006, 0.25, 4), a.material('black'));
-      wire.position.y = 0.13;
+      // Провод не должен пробивать потолок: длина ограничена запасом высоты над лампой
+      const wl = Math.max(0.02, Math.min(0.25, up - 0.05));
+      const wire = new THREE.Mesh(cylGeo(0.006, 0.006, wl, 4), a.material('black'));
+      wire.position.y = 0.05 + wl / 2;
       const sock = new THREE.Mesh(cylGeo(0.025, 0.025, 0.06, 8), a.material('black'));
       sock.position.y = 0.02;
       glow = new THREE.Mesh(sphereGeo(0.05, 10, 8), glowMat);
       glow.position.y = -0.04;
       g.add(wire, sock, glow);
     } else if (fx.type === 'chandelier') {
-      const rod = new THREE.Mesh(cylGeo(0.01, 0.01, 0.3, 4), a.material('brass'));
-      rod.position.y = 0.0;
+      const rl = Math.max(0.05, Math.min(0.3, up) + 0.12);
+      const rod = new THREE.Mesh(cylGeo(0.01, 0.01, rl, 4), a.material('brass'));
+      rod.position.y = (rl - 0.24) / 2;
       g.add(rod);
       glow = new THREE.Group();
       for (let i = 0; i < 3; i++) {
@@ -342,12 +390,14 @@ export class WorldBuilder {
       arm.rotation.z = Math.PI / 2; arm.position.y = -0.12;
       g.add(arm, glow);
     } else if (fx.type === 'emergency') {
-      const box = new THREE.Mesh(boxGeo(0.3, 0.1, 0.06), glowMat);
-      const sign = new THREE.Mesh(planeGeo(0.28, 0.08), a.signMaterial(['ВЫХОД'], { w: 128, h: 40, bg: '#1d3', fg: '#fff', size: 26, pad: 4, aged: false, basic: true }));
-      sign.position.set(0, 0.1, 0.02);
+      // Световой короб «ВЫХОД» на стене (fx.wallX — плоскость стены; сам источник света остаётся на fx.x)
+      const dx = (fx.wallX ?? fx.x + 0.3) - fx.x - 0.025;
+      const box = new THREE.Mesh(boxGeo(0.05, 0.14, 0.34), glowMat);
+      box.position.x = dx;
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.1), a.signMaterial(['ВЫХОД'], { w: 192, h: 64, bg: '#1b7a2c', fg: '#f2f2ea', size: 36, pad: 4, aged: false, basic: true }));
+      sign.position.set(dx - 0.029, 0, 0);
       sign.rotation.y = -Math.PI / 2;
-      box.rotation.y = Math.PI / 2;
-      g.add(box);
+      g.add(box, sign);
       glow = box;
     }
     this.dynamicRoot.add(g);

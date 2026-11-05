@@ -90,6 +90,49 @@ export class PropBuilder {
   done() { return { group: this.group, colliders: this.colliders, hits: this.hits, parts: this.parts }; }
 }
 
+
+/** Цилиндр, ось которого направлена вдоль Z (круглая кнопка / розетка на стене); (x, y, z) — центр. */
+function faceCyl(b, mat, r, x, y, z, th, seg = 14) {
+  const m = b.cyl(mat, r, r, th, 0, 0, 0, seg);
+  m.rotation.x = Math.PI / 2;
+  m.position.set(x, y, z);
+  return m;
+}
+
+/**
+ * Портал лифта. Локально: X — вдоль стены (0 — ось проёма), Z — в комнату, z=0 — плоскость стены.
+ * Проём 0.8 × 1.95 в стене (flush=false): створки утоплены на 3–5 см в толщу стены и уходят в неё на 0.4 м.
+ * flush=true — накладная глухая дверь прямо на стене (проёма нет).
+ */
+function liftPortal(b, o) {
+  const OW = 0.8, OH = 1.95, J = 0.1, FD = 0.03;
+  // Рамка: две стойки, перемычка
+  b.box('metal', J, OH + 0.12, FD, -(OW + J) / 2, 0, FD / 2);
+  b.box('metal', J, OH + 0.12, FD, (OW + J) / 2, 0, FD / 2);
+  b.box('metal', OW + 2 * J, 0.12, FD, 0, OH, FD / 2);
+  // Тонкая внутренняя окантовка
+  b.box('chrome', 0.008, OH, FD + 0.004, -OW / 2 - 0.004, 0, (FD + 0.004) / 2);
+  b.box('chrome', 0.008, OH, FD + 0.004, OW / 2 + 0.004, 0, (FD + 0.004) / 2);
+  // Порог
+  if (o.flush) b.box('metal', OW + 0.02, 0.015, 0.06, 0, 0, 0.03);
+  else b.box('metal', OW + 0.04, 0.015, 0.2, 0, 0, -0.07);
+  // Створки
+  const lw = OW / 2 + 0.002, lh = OH - 0.016;
+  let l, r;
+  if (o.flush) {
+    l = b.box('door_metal', OW / 2, lh, 0.014, -OW / 4, 0.016, 0.012);
+    r = b.box('door_metal', OW / 2, lh, 0.014, OW / 4, 0.016, 0.012);
+    b.box('black', 0.006, lh, 0.016, 0, 0.016, 0.012);
+  } else {
+    l = b.box('door_metal', lw, lh, 0.02, -OW / 4, 0.016, -0.05);
+    r = b.box('door_metal', lw, lh, 0.02, OW / 4, 0.016, -0.03);
+  }
+  b.parts.left = b.dynamic(l); b.parts.right = b.dynamic(r);
+  // Указатель этажа над перемычкой
+  b.box('black', 0.2, 0.09, FD + 0.01, 0, OH + 0.14, (FD + 0.01) / 2);
+  b.sign(b.a.signMaterial([o.dead ? '' : o.label], { w: 96, h: 64, bg: '#111', fg: '#e0a050', size: 44, pad: 4, aged: false }), 0.18, 0.07, 0, OH + 0.15, FD + 0.0105);
+}
+
 export const PROPS = {
   bed(b, o) {
     const w = o.w || 0.95, l = o.l || 2.0;
@@ -488,19 +531,44 @@ export const PROPS = {
     const led = b.dynamic(b.sphere(b.a.uniqueMaterial('lamp_off'), 0.008, 0.03, -0.06, 0.16));
     b.parts.led = led;
   },
-  elevator(b) {
-    b.box('metal', 1.2, 2.2, 0.08, 0, 0, 0);
-    const l = b.box('door_metal', 0.47, 2.0, 0.02, -0.24, 0, 0.05);
-    const r = b.box('door_metal', 0.47, 2.0, 0.02, 0.24, 0, 0.05);
-    b.parts.left = b.dynamic(l); b.parts.right = b.dynamic(r);
-    b.box('black', 0.005, 2.0, 0.025, 0, 0, 0.055);
-    b.sign(b.a.signMaterial(['6'], { w: 64, h: 64, bg: '#111', fg: '#c84', size: 44, pad: 4 }), 0.08, 0.08, 0, 2.12, 0.045);
+  elevator(b, o) {
+    // Закрытая (нерабочая) дверь второго лифта: накладной портал на стене, стиль как у рабочего лифта
+    // Начало предмета — на 4 см перед стеной (как у прежней модели), поэтому сдвигаем группу назад к плоскости стены
+    b.group.position.z = -0.04;
+    liftPortal(b, { flush: true, label: o.label || '6', dead: true });
+  },
+  elevator_doors(b, o) {
+    // Портал рабочего лифта: рамка вровень со стеной, проём 0.8 × 1.95, створки уходят в стену (ход 0.4 м)
+    liftPortal(b, { flush: false, label: o.label || '6', dead: false });
   },
   lift_button(b) {
-    b.box('metal', 0.1, 0.2, 0.02, 0, 1.1, 0);
-    const btn = b.dynamic(b.cyl(b.a.uniqueMaterial('lamp_off'), 0.02, 0.02, 0.015, 0, 1.18, 0.015, 10));
-    btn.rotation.x = Math.PI / 2;
-    b.parts.button = btn;
+    // Вызывная панель: накладка на стене (z 0..0.02), две кнопки ▲ ▼
+    b.box('metal', 0.1, 0.17, 0.02, 0, 1.04, 0);
+    b.box('black', 0.07, 0.13, 0.004, 0, 1.06, 0.02);
+    const up = b.dynamic(faceCyl(b, b.a.uniqueMaterial('lamp_off'), 0.016, 0, 1.13, 0.0245, 0.009));
+    faceCyl(b, 'plastic_beige', 0.016, 0, 1.075, 0.0245, 0.009);
+    b.parts.button = up;
+  },
+  light_switch(b, o) {
+    // Выключатель: рамка и накладка 8×8 см, клавиша (одна или две) вровень со стеной; начало — низ рамки, z=0 — стена
+    const keys = o.keys || 1;
+    b.box('plastic_beige', 0.095, 0.095, 0.004, 0, -0.0075, 0.002);
+    b.box('plastic_white', 0.08, 0.08, 0.012, 0, 0, 0.006);
+    const kw = keys === 1 ? 0.04 : 0.032;
+    b.parts.keys = [];
+    for (let i = 0; i < keys; i++) {
+      const x = keys === 1 ? 0 : (i ? 1 : -1) * 0.018;
+      const key = b.dynamic(b.box('plastic_white', kw, 0.058, 0.008, x, 0.011, 0.015));
+      key.rotation.x = 0.1;
+      b.parts.keys.push(key);
+    }
+    b.parts.key = b.parts.keys[0];
+    b.box('black', 0.002, 0.002, 0.001, 0, 0.04, 0.0125);
+  },
+  socket(b) {
+    // Розетка: круглая накладка с двумя гнёздами, начало — центр, z=0 — стена
+    faceCyl(b, 'plastic_white', 0.04, 0, 0, 0.005, 0.01);
+    for (const x of [-0.0125, 0.0125]) faceCyl(b, 'black', 0.005, x, 0, 0.0105, 0.002);
   },
   trash_chute(b) {
     // Мусоропровод идёт сквозь плиту 7-го этажа до потолка (h комнаты 4.4)

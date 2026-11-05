@@ -24,7 +24,10 @@ export const FURNISHING = [
   { prop: 'radiator', room: 'room47', x: -2.2, z: -8.32, rot: 0, opts: { n: 10 } },
   { prop: 'plant', room: 'room47', x: -3.35, z: -8.1, rot: 0 },
   { hitOnly: true, room: 'room47', x: -2.2, y: 0.8, z: -8.4, hit: { id: 'window_room', size: [1.5, 1.5, 0.3] } },
-  { hitOnly: true, room: 'room47', x: -1.1, y: 1.2, z: -4.75, hit: { id: 'sw_room47', size: [0.25, 0.3, 0.12] } },
+  { prop: 'light_switch', room: 'room47', x: -0.62, y: 1.16, z: -4.74, rot: N, opts: { keys: 1 }, hit: { id: 'sw_room47', size: [0.25, 0.3, 0.12], offset: [0, -0.07, 0] } },
+  { prop: 'socket', room: 'room47', x: 0.05, y: 0.95, z: -8.4, rot: 0 },
+  { prop: 'socket', room: 'room47', x: -3.75, y: 0.55, z: -8.4, rot: 0 },
+  { prop: 'socket', room: 'room47', x: -4.99, y: 0.35, z: -5.95, rot: E },
 
   // ================= Квартира 47: прихожая =================
   { prop: 'coatrack', room: 'hall47', x: -1.18, z: -2.3, rot: E, opts: { coats: ['cloth_dark', 'fabric'] } },
@@ -34,9 +37,9 @@ export const FURNISHING = [
   { prop: 'doormat', room: 'hall47', x: 0, z: -1.5, rot: 0 },
   { prop: 'shoes', room: 'hall47', x: 0.7, z: -1.45, rot: 0.3 },
   { prop: 'shoes', room: 'hall47', x: 0.85, z: -1.85, rot: -0.4, opts: { mat: 'cardboard' } },
-  { hitOnly: true, room: 'hall47', x: 0.62, y: 1.2, z: -1.16, hit: { id: 'sw_hall47', size: [0.25, 0.3, 0.12] } },
-  { hitOnly: true, room: 'hall47', x: 1.18, y: 1.2, z: -2.65, hit: { id: 'sw_bath47', size: [0.12, 0.3, 0.25] } },
-  { hitOnly: true, room: 'hall47', x: 1.18, y: 1.2, z: -3.35, hit: { id: 'sw_kitchen47', size: [0.12, 0.3, 0.25] } },
+  { prop: 'light_switch', room: 'hall47', x: 0.7, y: 1.16, z: -1.14, rot: N, opts: { keys: 1 }, hit: { id: 'sw_hall47', size: [0.25, 0.3, 0.12], offset: [0, -0.07, 0] } },
+  { prop: 'light_switch', room: 'hall47', x: 1.2, y: 1.16, z: -2.65, rot: W, opts: { keys: 1 }, hit: { id: 'sw_bath47', size: [0.12, 0.3, 0.25], offset: [0, -0.07, 0] } },
+  { prop: 'light_switch', room: 'hall47', x: 1.2, y: 1.16, z: -3.35, rot: W, opts: { keys: 1 }, hit: { id: 'sw_kitchen47', size: [0.12, 0.3, 0.25], offset: [0, -0.07, 0] } },
 
   // ================= Квартира 47: ванная =================
   { prop: 'bathtub', room: 'bath47', x: 3.04, z: -2.07, rot: 0 },
@@ -56,6 +59,8 @@ export const FURNISHING = [
   { prop: 'stool', room: 'kitchen47', x: 1.62, z: -7.2, rot: 0 },
   { prop: 'radiator', room: 'kitchen47', x: 2.9, z: -8.32, rot: 0, opts: { n: 8 } },
   { prop: 'plant', room: 'kitchen47', x: 3.35, y: 0.8, z: -8.47, rot: 0 },
+  { prop: 'socket', room: 'kitchen47', x: 4.4, y: 1.05, z: -5.9, rot: W },
+  { prop: 'socket', room: 'kitchen47', x: 4.4, y: 1.05, z: -5.35, rot: W },
   { hitOnly: true, room: 'kitchen47', x: 2.9, y: 0.85, z: -8.4, hit: { id: 'window_kitchen', size: [1.3, 1.4, 0.3] } },
 
   // ================= Квартира 45: Зинаида Павловна =================
@@ -118,9 +123,9 @@ export const FURNISHING = [
   { hitOnly: true, room: 'corridor', x: 0, y: 1.0, z: 1.02, hit: { id: 'door50_listen', size: [0.9, 1.6, 0.25] } },
 
   // ================= Лифтовый холл =================
-  { prop: 'elevator_doors', room: 'lifthall', x: 5.45, z: -3.4, rot: 0, name: 'lift_a' },
-  { prop: 'elevator', room: 'lifthall', x: 6.75, z: -3.36, rot: 0, name: 'lift_c' },
-  { prop: 'lift_button', room: 'lifthall', x: 6.1, z: -3.38, rot: 0, name: 'lift_btn', hit: { id: 'lift_button', size: [0.2, 0.3, 0.2], offset: [0, 1.15, 0.05] } },
+  { prop: 'elevator_doors', room: 'lifthall', x: 5.45, z: -3.4, rot: 0, name: 'lift_a', opts: { label: '6' } },
+  { prop: 'elevator', room: 'lifthall', x: 6.9, z: -3.36, rot: 0, name: 'lift_c' },
+  { prop: 'lift_button', room: 'lifthall', x: 6.17, z: -3.4, rot: 0, name: 'lift_btn', hit: { id: 'lift_button', size: [0.2, 0.3, 0.2], offset: [0, 1.0, 0.05] } },
   { prop: 'picture', room: 'lifthall', x: 7.38, z: -2.3, rot: W, opts: { w: 0.42, h: 0.3, y: 1.4, mat: { lines: ['#ЛИФТ НЕ РАБОТАЕТ', 'отключён по распоряжению', 'штаба ГОЧС'], opts: { w: 384, h: 256, bg: '#e8e2cc', titleColor: '#a02a1e', size: 22, titleSize: 30 } } } },
 
   // ================= Лестничная клетка =================

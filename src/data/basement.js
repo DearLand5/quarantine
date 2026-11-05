@@ -55,8 +55,8 @@ export const BASEMENT_DOORS = [
 ];
 
 export const BASEMENT_FIXTURES = [
-  { id: 'L_car', room: 'liftcar', x: 5.45, y: 2.1, z: -4.05, type: 'plafond', color: 0xf2f0dc, intensity: 1.6, range: 3, circuit: 'lift', on: true },
-  { id: 'L_bcar', room: 'bcar', x: 5.45, y: 2.1, z: 40.55, type: 'plafond', color: 0xf2f0dc, intensity: 1.6, range: 3, circuit: 'lift', on: true },
+  { id: 'L_car', room: 'liftcar', x: 5.45, y: 2.13, z: -4.05, type: 'panel', color: 0xf2f0dc, intensity: 2.2, range: 3, circuit: 'lift', on: true },
+  { id: 'L_bcar', room: 'bcar', x: 5.45, y: 2.13, z: 40.55, type: 'panel', color: 0xf2f0dc, intensity: 2.2, range: 3, circuit: 'lift', on: true },
   { id: 'L_bh1', room: 'b_hall', x: 6.2, y: 2.35, z: 42.8, type: 'bulb', color: 0xffd29a, intensity: 3.2, range: 7, circuit: 'basement', on: true, flicker: 'slight' },
   { id: 'L_bc1', room: 'b_corr', x: -1.5, y: 2.2, z: 43.55, type: 'bulb', color: 0xffcf90, intensity: 2.6, range: 6, circuit: 'basement', on: true },
   { id: 'L_bc2', room: 'b_corr', x: -7.5, y: 2.2, z: 43.55, type: 'bulb', color: 0xffcf90, intensity: 1.6, range: 5, circuit: 'basement', on: true, flicker: 'bad' },
@@ -68,10 +68,10 @@ export const BASEMENT_FIXTURES = [
 
 export const BASEMENT_FURNISHING = [
   // Кабины
-  { prop: 'lift_cabin', room: 'liftcar', x: 5.45, z: -4.05, rot: 0, hit: { id: 'lift_panel', size: [0.2, 0.4, 0.3], offset: [0.4, 1.0, 0.1] } },
-  { prop: 'lift_cabin', room: 'bcar', x: 5.45, z: 40.55, rot: 0, hit: { id: 'lift_panel_b', size: [0.2, 0.4, 0.3], offset: [0.4, 1.0, 0.1] } },
-  { prop: 'elevator_doors', room: 'b_hall', x: 5.45, z: 41.2, rot: 0, name: 'lift_b' },
-  { prop: 'lift_button', room: 'b_hall', x: 6.35, z: 41.22, rot: 0, hit: { id: 'lift_call_b', size: [0.2, 0.3, 0.2], offset: [0, 1.15, 0.05] } },
+  { prop: 'lift_cabin', room: 'liftcar', x: 5.45, z: -4.05, rot: 0, hit: { id: 'lift_panel', size: [0.2, 0.5, 0.3], offset: [0.4, 0.95, 0.26] } },
+  { prop: 'lift_cabin', room: 'bcar', x: 5.45, z: 40.55, rot: 0, hit: { id: 'lift_panel_b', size: [0.2, 0.5, 0.3], offset: [0.4, 0.95, 0.26] } },
+  { prop: 'elevator_doors', room: 'b_hall', x: 5.45, z: 41.2, rot: 0, name: 'lift_b', opts: { label: 'П' } },
+  { prop: 'lift_button', room: 'b_hall', x: 6.17, z: 41.2, rot: 0, hit: { id: 'lift_call_b', size: [0.2, 0.3, 0.2], offset: [0, 1.0, 0.05] } },
   // Лифтовая в подвале
   { prop: 'pipes', room: 'b_hall', x: 5.8, z: 44.35, rot: 0, opts: { len: 6.4, y: 2.1 } },
   { prop: 'puddle', room: 'b_hall', x: 4.4, z: 43.0, rot: 0, opts: { w: 2.2, d: 1.4 } },
@@ -79,7 +79,7 @@ export const BASEMENT_FURNISHING = [
   { prop: 'boxes', room: 'b_hall', x: 8.4, z: 42.0, rot: 0, opts: { n: 3 } },
   { prop: 'picture', room: 'b_hall', x: 8.98, z: 42.9, rot: -Math.PI / 2, opts: { w: 0.5, h: 0.32, y: 1.4, mat: { lines: ['#ПОДВАЛ', 'Посторонним вход', 'воспрещён', 'ЖЭК-4'], opts: { w: 320, h: 200, bg: '#d6cfb6', titleColor: '#8a2a1e', size: 22, titleSize: 30 } } } },
   // Коридор с сарайками
-  { prop: 'pipes', room: 'b_corr', x: -5.8, z: 42.85, rot: 0, opts: { len: 16.2, y: 2.0 } },
+  { prop: 'pipes', room: 'b_corr', x: -5.8, z: 42.85, rot: 0, opts: { len: 16.2, y: 2.2 } },
   { prop: 'storage_cells', room: 'b_corr', x: -1.4, z: 42.6, rot: 0, opts: { n: 4, open: 2 } },
   { prop: 'storage_cells', room: 'b_corr', x: -11.6, z: 42.6, rot: 0, opts: { n: 3 } },
   { prop: 'puddle', room: 'b_corr', x: -4.6, z: 43.6, rot: 0, opts: { w: 3.4, d: 1.3 } },

@@ -80,7 +80,7 @@ export const FLOOR10_FURNISHING = [
   { prop: 'fog_window', room: 'corridor10', x: -11.32, z: 90, rot: Math.PI / 2 },
   { hitOnly: true, room: 'corridor10', x: -11, y: 0.9, z: 90, hit: { id: 'c3_window', size: [0.3, 1.3, 1.2] } },
   { prop: 'army_gear', room: 'corridor10', x: 9.6, z: 89.6, rot: 0.4, hit: { id: 'c3_radio', size: [0.7, 0.5, 0.7] } },
-  { prop: 'elevator', room: 'corridor10', x: 6.1, z: Z + 0.05, rot: 0 },
+  { prop: 'elevator', room: 'corridor10', x: 6.1, z: Z + 0.05, rot: 0, opts: { label: '10' } },
   // «Моя» прихожая
   { prop: 'coatrack', room: 'replica47', x: -1.18, z: Z - 2.3, rot: Math.PI / 2, opts: { coats: ['cloth_dark', 'fabric'] } },
   { prop: 'shoe_cabinet', room: 'replica47', x: -1.02, z: Z - 2.95, rot: Math.PI / 2 },
