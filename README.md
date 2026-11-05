@@ -250,7 +250,7 @@ npm run check        # node tools/check.mjs
 └── src/
     ├── main.js                # загрузка, жест пользователя, запуск Game
     ├── core/      EventBus.js  GameState.js  SceneManager.js  AssetManager.js  Game.js
-    ├── world/     WorldBuilder.js  StaticBatcher.js  RoomManager.js  PhysicsSystem.js  PropsBasement.js
+    ├── world/     WorldBuilder.js  StaticBatcher.js  RoomManager.js  PhysicsSystem.js  PropsBasement.js  PropsFloor10.js
     │              LightingSystem.js  InteractionSystem.js  Door.js  Exterior.js
     │              Props.js  TextureFactory.js  geometry.js
     ├── player/    InputManager.js  MobileControls.js  PlayerController.js
@@ -259,12 +259,12 @@ npm run check        # node tools/check.mjs
     │              DialogueSystem.js  RelationshipSystem.js
     ├── phone/     PhoneController.js  Messenger.js  ChatManager.js  ContactManager.js
     │              Gallery.js  PhotoFactory.js  NotificationManager.js  IntentRecognizer.js
-    ├── story/     StoryManager.js  StoryContext.js  QuestManager.js  EventManager.js  Chapter2.js
+    ├── story/     StoryManager.js  StoryContext.js  QuestManager.js  EventManager.js  Chapter2.js  Chapter3.js  HomeMechanics.js
     │              EndingManager.js  Interactions.js
     ├── systems/   Inventory.js  AudioManager.js  SoundSynth.js  Ambience.js
     │              SaveManager.js  SettingsManager.js
     ├── ui/        HUD.js  MenuManager.js  DialogueUI.js  InventoryUI.js  Reader.js
-    ├── data/      characters.js  dialogues.js  messages.js  locations.js  furnishing.js  basement.js  chapter2.js
+    ├── data/      characters.js  dialogues.js  messages.js  locations.js  furnishing.js  basement.js  chapter2.js  floor10.js  chapter3.js
     │              storyEvents.js  quests.js  items.js  calls.js
     └── utils/     Random.js  time.js  dom.js
 ```
@@ -419,8 +419,8 @@ GLB масштабируется по росту из `look.height`. Если в
   лестничная площадка, кабина лифта; в главе 2 — подвал (лифтовая, коридор с сарайками, котельная) и «Объект 17».
   Лестницы вверх и вниз закрыты по сюжету. Физика плоская, поэтому подвал вынесен в отдельную часть мира, а «спуск»
   на лифте — поездка с затемнением.
-- **Две главы** («Первая ночь» и «Котельная»), у каждой по три исхода; вторая учитывает решения первой.
-  Это итоги глав, а не финал всей истории.
+- **Три главы** («Первая ночь», «Котельная», «Десятый этаж»); каждая учитывает решения предыдущих.
+  Это итоги глав, а не финал всей истории (планируется пять глав).
 - **Свободный ввод в чате — без языковой модели**: распознавание намерений по ключевым корням слов и упоминаниям
   имён. Персонаж отвечает по теме, но не понимает сложные фразы. В интерфейсе об этом есть пометка.
   Основные сюжетные развилки идут через варианты ответа.
@@ -465,6 +465,34 @@ GLB масштабируется по росту из `look.height`. Если в
 забрать плёнку. После выбора — погоня к лифту; если эхо догоняет, скример и повтор с места выбора.
 
 </details>
+
+## Глава 3 «Десятый этаж»
+
+Начинается с итогового экрана главы 2 или из главного меню (без сохранения конца главы 2 — с исходами по умолчанию).
+
+<details>
+<summary>Спойлеры главы 3</summary>
+
+**28 октября, 05:50.** Ночью Лиза с седьмого этажа поднялась по срезанной решётке выше девятого — на этаж,
+которого нет, — и перестала отвечать. Ночная хроника в чате зависит от выбора у резонатора в главе 2.
+
+Десятый этаж — копия шестого, но неправильная: все двери с номером 47, в списке эвакуации трижды «Ермаков К. А.»,
+за окном белая пустота, за одной из дверей — точная копия прихожей Кирилла. Голос Лизы отвечает из-за трёх дверей.
+Денис подсказывает: эхо повторяет записанное домом слово в слово. Живая Лиза отвечает на вопросы своими словами,
+одно эхо цитирует сообщения из чата дословно, другое повторяет сам вопрос. Какая дверь настоящая — выбирается
+случайно в начале главы. Не та дверь — скример и погоня до лестницы (на лестницу эхо не выходит).
+
+На верхней ступени марша вниз стоит «свой» в противогазе: «Свои. Назовите себя». Можно назвать имя, промолчать,
+сказать «Свои» или, если в главе 2 забрали плёнку, включить её. Итог главы зависит от ответа и от того, спасена ли Лиза.
+
+</details>
+
+## Бытовые механики
+
+Чайник (закипает, пар, чай восстанавливает силы и успокаивает), телевизоры в квартирах 47 и 45 (новости зависят
+от времени и главы), краны на кухне и в ванной, холодильник с подсветкой, ноутбук (можно отправить перевод Ирине,
+если есть сеть), стиральная машина, шкаф, выключатели света, зарядка телефона, радио, кровать (подождать 15 минут).
+Состояние сохраняется (`src/story/HomeMechanics.js`, звуки — `src/systems/HomeSounds.js`).
 
 ## Спойлеры: сводка главы 1
 
