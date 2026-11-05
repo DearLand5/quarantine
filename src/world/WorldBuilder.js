@@ -10,6 +10,8 @@ import { batchStatic } from './StaticBatcher.js';
 import { buildExterior } from './Exterior.js';
 import { BASEMENT_ROOMS, BASEMENT_DOORS, BASEMENT_FIXTURES, BASEMENT_FURNISHING } from '../data/basement.js';
 import './PropsBasement.js';
+import { FLOOR10_ROOMS, FLOOR10_DOORS, FLOOR10_FIXTURES, FLOOR10_FURNISHING } from '../data/floor10.js';
+import './PropsFloor10.js';
 
 const HIT_MAT = new THREE.MeshBasicMaterial({ visible: false });
 const GAP = 0.14;
@@ -33,10 +35,10 @@ export class WorldBuilder {
   }
 
   build() {
-    for (const room of [...ROOMS, ...BASEMENT_ROOMS]) this.buildRoom(room);
-    for (const def of [...DOORS, ...BASEMENT_DOORS]) this.buildDoor(def);
-    for (const item of [...FURNISHING, ...BASEMENT_FURNISHING]) this.placeItem(item);
-    for (const fx of [...FIXTURES, ...BASEMENT_FIXTURES]) this.buildFixture(fx);
+    for (const room of [...ROOMS, ...BASEMENT_ROOMS, ...FLOOR10_ROOMS]) this.buildRoom(room);
+    for (const def of [...DOORS, ...BASEMENT_DOORS, ...FLOOR10_DOORS]) this.buildDoor(def);
+    for (const item of [...FURNISHING, ...BASEMENT_FURNISHING, ...FLOOR10_FURNISHING]) this.placeItem(item);
+    for (const fx of [...FIXTURES, ...BASEMENT_FIXTURES, ...FLOOR10_FIXTURES]) this.buildFixture(fx);
     this.exterior = buildExterior(this.assets);
     this.root.add(this.exterior.group);
     // Объединяем статическую геометрию
@@ -253,7 +255,7 @@ export class WorldBuilder {
       parent.updateMatrixWorld(true);
       // Коллайдеры предмета в мировые координаты (поворот кратен 90°)
       for (const c of built.colliders) this.colliders.push(this.transformCollider(c, item));
-      if (item.name) this.named.set(item.name, { group: built.group, parts: built.parts, item });
+      if (item.name) this.named.set(item.name, { group: built.group, parts: built.parts, item, meshes: [] });
     }
     if (item.hit) {
       const [w, h, d] = item.hit.size;
@@ -269,16 +271,27 @@ export class WorldBuilder {
     parent.updateMatrixWorld(true);
     const meshes = [];
     parent.traverse((o) => { if (o.isMesh || o.isInstancedMesh) meshes.push(o); });
+    // Подбираемые предметы (item.pickup) не объединяются со статикой, чтобы их можно было убрать из мира
+    const pickupMeshes = [];
     for (const m of meshes) {
       const world = m.matrixWorld.clone();
       m.removeFromParent();
       world.decompose(m.position, m.quaternion, m.scale);
-      if (m.userData.hitId || m.userData.dynamic || m.isInstancedMesh || (m.material && m.material.name && m.material.name.includes('#unique'))) {
+      if (item.pickup && !m.userData.hitId) pickupMeshes.push(m);
+      if (item.pickup || m.userData.hitId || m.userData.dynamic || m.isInstancedMesh || (m.material && m.material.name && m.material.name.includes('#unique'))) {
         this.dynamicRoot.add(m);
       } else {
         this.addStatic(m, item.room);
       }
     }
+    if (item.pickup && item.name && this.named.get(item.name)) this.named.get(item.name).meshes = pickupMeshes;
+  }
+
+  /** Убрать подобранный предмет из мира (видимые меши и зону взаимодействия) */
+  hidePickup(name, hidden = true) {
+    const entry = this.named.get(name);
+    if (!entry) return;
+    for (const m of entry.meshes || []) m.visible = !hidden;
   }
 
   transformCollider(c, item) {

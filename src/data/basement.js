@@ -84,9 +84,9 @@ export const BASEMENT_FURNISHING = [
   { prop: 'storage_cells', room: 'b_corr', x: -11.6, z: 42.6, rot: 0, opts: { n: 3 } },
   { prop: 'puddle', room: 'b_corr', x: -4.6, z: 43.6, rot: 0, opts: { w: 3.4, d: 1.3 } },
   { prop: 'puddle', room: 'b_corr', x: 0.6, z: 44.0, rot: 0, opts: { w: 1.4, d: 0.8 } },
-  { prop: 'dropped_torch', room: 'b_corr', x: -10.4, z: 43.9, rot: 0, hit: { id: 'c2_sanych_torch', size: [0.5, 0.3, 0.5] } },
+  { prop: 'dropped_torch', room: 'b_corr', x: -10.4, z: 43.9, rot: 0, name: 'sanych_torch', pickup: true, hit: { id: 'c2_sanych_torch', size: [0.5, 0.3, 0.5] } },
   { hitOnly: true, room: 'b_corr', x: -12.6, y: 0, z: 44.0, hit: { id: 'c2_sanych_phone', size: [0.45, 0.3, 0.45] } },
-  { prop: 'phone_floor', room: 'b_corr', x: -12.6, z: 44.0, rot: 0.6 },
+  { prop: 'phone_floor', room: 'b_corr', x: -12.6, z: 44.0, rot: 0.6, name: 'sanych_phone_model', pickup: true },
   { hitOnly: true, room: 'b_corr', x: 0.2, y: 0.2, z: 42.7, hit: { id: 'c2_cell_dog', size: [1.6, 1.6, 0.3] } },
   // Котельная
   { prop: 'boiler', room: 'b_boiler', x: -12.2, z: 48.4, rot: Math.PI / 2 },

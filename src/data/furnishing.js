@@ -119,7 +119,7 @@ export const FURNISHING = [
 
   // ================= Лифтовый холл =================
   { prop: 'elevator_doors', room: 'lifthall', x: 5.45, z: -3.4, rot: 0, name: 'lift_a' },
-  { prop: 'elevator', room: 'lifthall', x: 6.75, z: -3.36, rot: 0, name: 'lift_b' },
+  { prop: 'elevator', room: 'lifthall', x: 6.75, z: -3.36, rot: 0, name: 'lift_c' },
   { prop: 'lift_button', room: 'lifthall', x: 6.1, z: -3.38, rot: 0, name: 'lift_btn', hit: { id: 'lift_button', size: [0.2, 0.3, 0.2], offset: [0, 1.15, 0.05] } },
   { prop: 'picture', room: 'lifthall', x: 7.38, z: -2.3, rot: W, opts: { w: 0.42, h: 0.3, y: 1.4, mat: { lines: ['#ЛИФТ НЕ РАБОТАЕТ', 'отключён по распоряжению', 'штаба ГОЧС'], opts: { w: 384, h: 256, bg: '#e8e2cc', titleColor: '#a02a1e', size: 22, titleSize: 30 } } } },
 

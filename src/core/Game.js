@@ -36,6 +36,7 @@ import { StoryManager } from '../story/StoryManager.js';
 import { EndingManager } from '../story/EndingManager.js';
 import { createInteractions } from '../story/Interactions.js';
 import { Chapter2 } from '../story/Chapter2.js';
+import { HomeMechanics } from '../story/HomeMechanics.js';
 import { dayLog } from '../data/chapter2.js';
 import { t2 } from '../utils/time.js';
 import { HUD } from '../ui/HUD.js';
@@ -127,8 +128,9 @@ export class Game {
     this.storyCtx = new StoryContext(this);
     for (const sys of [this.chats, this.contacts, this.dialogue, this.events]) sys.ctx = this.storyCtx;
     this.ch2 = new Chapter2(this);
+    this.home = new HomeMechanics(this);
     const baseResolver = createInteractions(this);
-    this.interaction.setResolver((id, obj) => this.ch2.resolve(id) || baseResolver(id, obj));
+    this.interaction.setResolver((id, obj) => this.ch2.resolve(id) || this.home.resolve(id, obj) || baseResolver(id, obj));
 
     this.buildMenuProps();
     this.bindEvents();
@@ -387,6 +389,7 @@ export class Game {
     this.setMode('play');
     this.rooms.update(0, this.player.pos);
     this.ch2.restore();
+    this.home.restore();
     this.ambience.env = this.rooms.room?.ambient || 'home';
     this.audio.setEnvironment(this.ambience.env);
     if (this.gs.data.chapter === 1 && this.gs.data.story.ending) this.bus.emit('hud:toast', { text: 'Глава 1 завершена. Можно осмотреться.' });
@@ -609,6 +612,7 @@ export class Game {
     this.events.update(dt);
     this.story.update(dt);
     this.ch2.update(dt);
+    this.home.update(dt);
     this.ambience.update(dt, this.player.pos);
     this.audio.updateListener(this.sm.camera, dt);
     this.phone.update(dt, { chargeOk: this.rooms.current === 'room47' });
