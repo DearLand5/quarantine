@@ -114,6 +114,7 @@ export class NPCManager {
     const npc = this.get(id);
     if (!npc) return;
     npc.forceDoorway = true;
+    npc.speedMul = 2.2;   // на стук спешат
     const inNode = `in${npc.def.apartment}`;
     const finish = () => {
       const st = this.deps.gs.door(npc.def.door);
@@ -137,6 +138,7 @@ export class NPCManager {
     if (!npc) return;
     npc.talking = false;
     npc.forceDoorway = false;
+    npc.speedMul = 1;
     if (!keepOpen) {
       const st = this.deps.gs.door(npc.def.door);
       if (st.open) {

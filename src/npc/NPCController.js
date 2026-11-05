@@ -90,7 +90,7 @@ export class NPCController {
         const target = this.nav.pos(next);
         const dx = target.x - this.x, dz = target.z - this.z;
         const d = Math.hypot(dx, dz);
-        const sp = this.def.speed || 1;
+        const sp = (this.def.speed || 1) * (this.speedMul || 1);
         const step = Math.min(d, sp * dt);
         // Не идём сквозь игрока: если он рядом на пути — ждём
         const pd = Math.hypot(playerPos.x - (this.x + dx / (d || 1) * 0.5), playerPos.z - (this.z + dz / (d || 1) * 0.5));

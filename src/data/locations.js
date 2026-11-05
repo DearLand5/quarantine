@@ -28,16 +28,21 @@ export const ROOMS = [
     id: 'lifthall', name: 'Лифтовый холл', x0: 4.8, x1: 7.4, z0: -3.4, z1: -1.14, h: 2.6,
     floor: 'floor_corridor', ceiling: 'wall_whitewash', wall: 'wall_whitewash', wainscot: { h: 1.5, mat: 'wall_paint_green' },
     surface: 'tile', ambient: 'corridor', signal: 1,
-    openings: [{ side: 's', at: 6.1, w: 2.6, h: 2.35, open: true }],
+    openings: [
+      { side: 's', at: 6.1, w: 2.6, h: 2.35, open: true },
+      { side: 'n', at: 5.45, w: 0.8, h: 1.95, open: true },   // лифт А (глава 2)
+    ],
   },
   {
-    id: 'stair', name: 'Лестничная клетка', x0: 11.14, x1: 15.6, z0: -2.6, z1: 2.6, h: 3.4,
+    // Лестничная клетка: 6-й этаж (y=0) — площадка у двери, дальше два марша с полуэтажом (+1.36) у восточной стены.
+    // Над площадкой — плита 7-го этажа (+2.72), вниз ведёт заваренный марш (полуэтаж -1.36). Геометрия — в Props.stairs.
+    id: 'stair', name: 'Лестничная клетка', x0: 11.14, x1: 16.6, z0: -2.6, z1: 2.6, h: 4.4,
     floor: 'floor_concrete', ceiling: 'wall_whitewash', wall: 'wall_whitewash', wainscot: { h: 1.5, mat: 'wall_paint_green' },
-    floorRects: [{ x0: 11.14, x1: 13.0, z0: -2.6, z1: 2.6 }],
+    floorRects: [{ x0: 11.14, x1: 12.9, z0: -2.6, z1: 2.6 }],
     surface: 'concrete', ambient: 'stair', signal: 3,
     openings: [
       { side: 'w', at: 0, w: 1.2, h: 2.1, door: 'dStair' },
-      { side: 'e', at: -1.3, w: 1.2, h: 1.2, sill: 1.6, window: 'win_stair' },
+      { side: 'e', at: 0, w: 1.4, h: 1.4, sill: 2.5, window: 'win_stair' },
     ],
   },
   // ---------- Квартира 47 (игрок) ----------
@@ -145,7 +150,8 @@ export const FIXTURES = [
   { id: 'L_c4', room: 'corridor', x: 3, y: 2.52, z: 0, type: 'plafond', color: 0xe8e6c8, intensity: 3.2, range: 6, circuit: 'corridor', on: true },
   { id: 'L_c5', room: 'corridor', x: 7.5, y: 2.52, z: 0, type: 'plafond', color: 0xd8e0c8, intensity: 3.0, range: 6, circuit: 'corridor', on: true, flicker: 'bad' },
   { id: 'L_lift', room: 'lifthall', x: 6.1, y: 2.52, z: -2.3, type: 'plafond', color: 0xe8e6c8, intensity: 2.6, range: 5, circuit: 'corridor', on: true },
-  { id: 'L_stair', room: 'stair', x: 12.2, y: 3.3, z: 0, type: 'bulb', color: 0xffe2b0, intensity: 2.6, range: 7, circuit: 'corridor', on: true, flicker: 'slight' },
+  { id: 'L_stair', room: 'stair', x: 12.0, y: 2.27, z: 0, type: 'bulb', color: 0xffe2b0, intensity: 2.6, range: 7, circuit: 'corridor', on: true, flicker: 'slight' },
+  { id: 'L_stair_mid', room: 'stair', x: 15.7, y: 4.1, z: 0, type: 'bulb', color: 0xffd9a0, intensity: 1.1, range: 6, circuit: 'corridor', on: true },
   { id: 'L_emerg', room: 'corridor', x: 10.7, y: 2.35, z: 0, type: 'emergency', color: 0xff3020, intensity: 1.6, range: 7, circuit: 'emergency', on: true },
   { id: 'L_zina', room: 'room45', x: -8.3, y: 2.38, z: -5.6, type: 'chandelier', color: 0xffc98a, intensity: 3.5, range: 6, circuit: 'neighbor', on: true },
   { id: 'L_zina_hall', room: 'hall45', x: -8, y: 2.45, z: -2.4, type: 'bulb', color: 0xffcf98, intensity: 2, range: 4, circuit: 'neighbor', on: true },
@@ -162,7 +168,7 @@ export const NAV_NODES = {
   in45: [-8, -1.7], in48: [-8, 1.75], in49: [-4, 1.75], in51: [4, 1.75],
   zina_hall: [-8, -2.9], zina_room: [-8, -4.6], zina_chair: [-9.55, -6.15],
   lift: [6.1, -2.2], panel: [2.0, -0.45],
-  stair_in: [11.8, 0], landing: [12.4, -1.2], landing_win: [12.6, 1.0],
+  stair_in: [11.8, 0], landing: [12.2, -1.5], landing_win: [12.25, 1.2],
 };
 
 export const NAV_EDGES = [
