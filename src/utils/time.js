@@ -16,6 +16,12 @@ export function t(str) {
 // Ночь главы 2 (27 → 28 октября)
 export function t2(str) { return t(str) + 1440; }
 
+// Утро главы 3 (28 октября): "05:50" -> 2880 + 350
+export function t3(str) {
+  const [h, m] = str.split(':').map(Number);
+  return 2880 + h * 60 + m;
+}
+
 // Дневное время 27 октября (для истории сообщений): "08:15" -> 1440 + 495
 export function day2(str) {
   const [h, m] = str.split(':').map(Number);

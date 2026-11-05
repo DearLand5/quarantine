@@ -46,7 +46,12 @@ export class AudioManager {
     const comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -18; comp.knee.value = 12; comp.ratio.value = 6;
     comp.attack.value = 0.004; comp.release.value = 0.22;
-    this.master.connect(this.headroom).connect(comp).connect(ctx.destination);
+    // На телефоне срезаем инфранизкий гул: маленький динамик его не воспроизводит, а только хрипит от перегрузки
+    this.lowCut = ctx.createBiquadFilter();
+    this.lowCut.type = 'highpass';
+    this.lowCut.frequency.value = this.mobile ? 110 : 25;
+    this.lowCut.Q.value = 0.6;
+    this.master.connect(this.lowCut).connect(this.headroom).connect(comp).connect(ctx.destination);
 
     this.buses = {};
     for (const name of ['sfx', 'ambient', 'music', 'voice', 'ui']) {
@@ -217,10 +222,11 @@ export class AudioManager {
     const ux = e[4], uy = e[5], uz = e[6];
     const t = this.ctx.currentTime;
     if (l.positionX) {
-      void t;
-      l.positionX.value = p.x; l.positionY.value = p.y; l.positionZ.value = p.z;
-      l.forwardX.value = fx; l.forwardY.value = fy; l.forwardZ.value = fz;
-      l.upX.value = ux; l.upY.value = uy; l.upZ.value = uz;
+      // Плавно и без накопления: отменяем прошлую цель и ставим новую. Скачок значения слышен как щелчок.
+      const ramp = (param, v) => { param.cancelScheduledValues(t); param.setTargetAtTime(v, t, 0.035); };
+      ramp(l.positionX, p.x); ramp(l.positionY, p.y); ramp(l.positionZ, p.z);
+      ramp(l.forwardX, fx); ramp(l.forwardY, fy); ramp(l.forwardZ, fz);
+      ramp(l.upX, ux); ramp(l.upY, uy); ramp(l.upZ, uz);
     } else {
       l.setPosition(p.x, p.y, p.z);
       l.setOrientation(fx, fy, fz, ux, uy, uz);

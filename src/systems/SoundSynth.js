@@ -42,13 +42,28 @@ function tone(ctx, out, { t, type = 'sine', freq = 440, freqEnd = null, a = 0.00
 
 export function makeNoiseBuffers(ctx) {
   const len = ctx.sampleRate * 3;
-  const make = (fn) => {
+  const fade = Math.floor(ctx.sampleRate * 0.08);
+  // Буфер зациклен, поэтому конец плавно перетекает в начало (иначе на стыке — щелчок каждые 3 с),
+  // а пик нормализуется, чтобы шум не уходил в перегруз
+  const make = (fn, target = 0.85) => {
+    const raw = new Float32Array(len + fade);
+    fn(raw);
+    let mean = 0;
+    for (let i = 0; i < raw.length; i++) mean += raw[i];
+    mean /= raw.length;
     const b = ctx.createBuffer(1, len, ctx.sampleRate);
     const d = b.getChannelData(0);
-    fn(d);
+    for (let i = 0; i < len; i++) d[i] = raw[i] - mean;
+    for (let i = 0; i < fade; i++) {
+      const w = i / fade;
+      d[i] = d[i] * w + (raw[len + i] - mean) * (1 - w);
+    }
+    let peak = 0;
+    for (let i = 0; i < len; i++) peak = Math.max(peak, Math.abs(d[i]));
+    if (peak > 0) for (let i = 0; i < len; i++) d[i] *= target / peak;
     return b;
   };
-  const white = make((d) => { for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; });
+  const white = make((d) => { for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }, 0.9);
   const pink = make((d) => {
     let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
     for (let i = 0; i < d.length; i++) {
@@ -57,11 +72,11 @@ export function makeNoiseBuffers(ctx) {
       b3 = 0.8665 * b3 + w * 0.3104856; b4 = 0.55 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.016898;
       d[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11; b6 = w * 0.115926;
     }
-  });
+  }, 0.5);
   const brown = make((d) => {
     let last = 0;
     for (let i = 0; i < d.length; i++) { const w = Math.random() * 2 - 1; last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; }
-  });
+  }, 0.7);
   return { white, pink, brown };
 }
 

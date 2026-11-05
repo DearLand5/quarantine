@@ -33,6 +33,10 @@
 
 /* Низкий горизонтальный экран (телефон в ландшафте): «смартфон» шире, чтобы текст оставался читаемым */
 @media (orientation: landscape) and (max-height: 540px) {
+  .call-screen { padding: .8em .8em 1em; }
+  .call-screen .ava.l { width: 3.2em; height: 3.2em; font-size: 1.2em; }
+  .call-screen .nm { font-size: 1.15em; margin-top: .3em; }
+  .call-screen .cb { width: 3.4em; height: 3.4em; }
   .phone-layer { padding-right: calc(2vw + var(--safe-r)); }
   .phone { --ph-h: calc(100vh - 12px); width: min(58vw, 440px); border-radius: 18px; padding: 6px; }
   .phone .screen { inset: 6px; border-radius: 14px; }
@@ -207,11 +211,18 @@
 .contact-card .acts { display: flex; gap: 1em; margin-top: .8em; }
 .contact-card .acts button { background: rgba(255,255,255,.07); border: none; border-radius: 1em; padding: .7em 1.1em; font-size: .85em; cursor: pointer; }
 
-.call-screen { background: linear-gradient(180deg, #1c2622 0%, #0b0e0d 100%); align-items: center; padding: 3em 1em 2.4em; text-align: center; }
-.call-screen .nm { font-size: 1.5em; margin-top: .7em; }
-.call-screen .st { opacity: .6; font-size: .9em; margin-top: .3em; }
-.call-screen .lines { margin-top: 1.6em; font-size: .9em; line-height: 1.5; opacity: .85; min-height: 6em; padding: 0 .5em; }
-.call-screen .btns { margin-top: auto; display: flex; gap: 3em; }
+.call-screen { background: linear-gradient(180deg, #1c2622 0%, #0b0e0d 100%); align-items: center; padding: 2em 1em 1.6em; text-align: center; overflow: hidden; }
+.call-screen .ava.l { flex: 0 0 auto; }
+.call-screen .nm { font-size: 1.4em; margin-top: .5em; flex: 0 0 auto; max-width: 100%; overflow-wrap: anywhere; }
+.call-screen .st { opacity: .6; font-size: .9em; margin-top: .2em; flex: 0 0 auto; }
+/* Реплики разговора прокручиваются внутри экрана и никогда не выталкивают кнопки за край */
+.call-screen .lines {
+  margin: 1em 0 .8em; font-size: .88em; line-height: 1.45; opacity: .9; padding: 0 .4em;
+  flex: 1 1 auto; min-height: 0; width: 100%; overflow-y: auto; overflow-wrap: anywhere;
+  display: flex; flex-direction: column; justify-content: flex-end; gap: .45em; text-align: left;
+}
+.call-screen .lines > div { flex: 0 0 auto; }
+.call-screen .btns { flex: 0 0 auto; display: flex; gap: 3em; }
 .call-screen .cb { width: 4.4em; height: 4.4em; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1em; color: #fff; }
 .call-screen .cb.acc { background: #3e9a5b; animation: pulse 1.2s infinite; }
 .call-screen .cb.dec { background: #c2493d; }

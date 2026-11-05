@@ -2,8 +2,9 @@
 // Проверяются дважды в секунду, а также мгновенно по флагам. «Сработавшие» сохраняются.
 import { STORY_EVENTS } from '../data/storyEvents.js';
 import { CH2_EVENTS } from '../data/chapter2.js';
+import { CH3_EVENTS } from '../data/chapter3.js';
 
-const ALL_EVENTS = [...STORY_EVENTS, ...CH2_EVENTS];
+const ALL_EVENTS = [...STORY_EVENTS, ...CH2_EVENTS, ...CH3_EVENTS];
 
 export class EventManager {
   constructor(gameState, bus) {

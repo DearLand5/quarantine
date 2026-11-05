@@ -15,6 +15,8 @@ export class StoryContext {
 
   get story() { return this.g.story; }
   get ch2() { return this.g.ch2; }
+  get ch3() { return this.g.ch3; }
+  ch2Outcome() { return this.g.gs.data.story.ch2Outcome || this.g.gs.data.flags.c2_outcome || 'tape'; }
   get chapter() { return this.g.gs.data.chapter || 1; }
   ch1Outcome() { return this.g.gs.data.story.ch1Outcome || this.g.gs.data.story.outcome || 'warned'; }
   near(x, z, r) { return Math.hypot(this.g.player.pos.x - x, this.g.player.pos.z - z) < r; }

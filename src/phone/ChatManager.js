@@ -76,7 +76,14 @@ export class ChatManager {
     }
   }
 
-  chat(id) { return this.phone.chats[id]; }
+  chat(id) {
+    // Чаты, добавленные в новых главах, создаются при первом обращении (в том числе в старых сохранениях)
+    if (!this.phone.chats[id] && CHATS[id]) {
+      this.phone.chats[id] = { id, visible: !!CHATS[id].visible, unread: 0, messages: [], lastActivity: 0, typing: null };
+      this.phone.chatOrder.push(id);
+    }
+    return this.phone.chats[id];
+  }
   def(id) { return CHATS[id]; }
   members(id) { return CHATS[id]?.type === 'group' ? CHATS[id].members : [CHATS[id]?.with].filter(Boolean); }
 

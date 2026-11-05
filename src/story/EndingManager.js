@@ -99,6 +99,7 @@ export class EndingManager {
     const g = this.g;
     const chapter = g.gs.data.chapter || 1;
     if (chapter === 2) return this.show2();
+    if (chapter === 3) return this.show3();
     if (g.gs.data.story.ending) return;
     const data = this.compute();
     g.gs.data.story.ending = data.outcome;
@@ -107,6 +108,7 @@ export class EndingManager {
     g.saves.save('ch1end', 'Конец главы 1');
     g.hud.fade(true, 'Рассвет так и не наступил.\nНо ночь закончилась.').then(() => {
       g.setMode('ending');
+      setTimeout(() => g.hud.fade(false), 400);
       g.menus.showEnding(data, {
         onMenu: () => g.toMainMenu(),
         onNext: () => g.startChapter2(),
@@ -120,9 +122,64 @@ export class EndingManager {
     if (g.gs.data.story.ending2) return;
     const data = this.compute2();
     g.gs.data.story.ending2 = data.outcome;
+    g.gs.data.story.ch2Outcome = data.outcome;
     g.saves.save('auto', 'Конец главы 2');
+    g.saves.save('ch2end', 'Конец главы 2');
     g.hud.fade(true, 'Лифт остановился на шестом.\nДвери открылись в тишину.').then(() => {
       g.setMode('ending');
+      setTimeout(() => g.hud.fade(false), 400);
+      g.menus.showEnding(data, {
+        onMenu: () => g.toMainMenu(),
+        onNext: () => g.startChapter3(),
+        nextLabel: 'Глава 3 · Десятый этаж →',
+        onKeepPlaying: () => { g.menus.hide(); g.setMode('play'); g.hud.fade(false); },
+      });
+    });
+  }
+
+  /** Итог главы 3: спасена ли Лиза и что ответил «своему» на лестнице */
+  compute3() {
+    const g = this.g;
+    const f = g.gs.data.flags;
+    const saved = !!f.c3_lisa_saved;
+    const answer = f.c3_answer || 'silent';
+    const A = {
+      silent: { title: saved ? 'Молчание' : 'Пустая лестница', text: 'Ты прошёл мимо, не сказав ни слова. Он так и остался стоять на верхней ступени, наклонив голову, — будто прислушивался к месту, где тебя нет.' },
+      name: { title: 'Своё имя', text: 'Ты назвал себя. Он повторил твоё имя твоим голосом и отступил. Теперь в списке эвакуации на одного Ермакова больше.' },
+      password: { title: 'Свои', text: 'Ты сказал «Свои». Это слово открывает двери. Все двери сорок семь на десятом этаже теперь не заперты — изнутри.' },
+      tape: { title: 'Запись 14', text: 'Ты включил плёнку. Голос Петра Крылова, мёртвого двадцать лет, остановил его лучше любого слова. Плёнка закончилась на середине фразы.' },
+    }[answer];
+    const lisaText = saved
+      ? '\n\nЛиза сидит на ступеньках шестого этажа, обхватив колени. Она говорит своими словами — сбивчиво, повторяясь, с паузами. По-живому.'
+      : '\n\nЛиза осталась наверху. Ночью от неё придёт сообщение: «ты открыл не ту».';
+    const word = (id) => g.rel.summary(id).word;
+    return {
+      chapterLabel: 'Глава 3 · Десятый этаж',
+      title: A.title,
+      text: A.text + lisaText,
+      tease: saved ? 'В 09:00 в дверь постучат: «Свои». За дверью будет стоять военный — и Лиза рядом с ним. Вторая Лиза.' : 'В 09:00 эвакуацию начнут с десятого этажа. Первой в списке — Гончар Е.',
+      outcome: `${saved ? 'saved' : 'lost'}_${answer}`,
+      stats: [
+        ['Лиза', saved ? 'спасена' : 'осталась на десятом'],
+        ['Ошибочных дверей', String(g.gs.data.counters.c3_wrong || 0)],
+        ['Ответ «своему»', { silent: 'промолчал', name: 'назвал имя', password: '«Свои»', tape: 'плёнка 1984 года' }[answer]],
+        ['Твой голос', f.echo_has_voice ? 'дом его знает' : 'дом его не знает'],
+        ['Денис', word('denis')],
+        ['Найдено странностей', `${g.gs.data.story.clues.length} из ${Object.keys(CLUES).length}`],
+      ],
+    };
+  }
+
+  show3() {
+    const g = this.g;
+    if (g.gs.data.story.ending3) return;
+    const data = this.compute3();
+    g.gs.data.story.ending3 = data.outcome;
+    g.saves.save('auto', 'Конец главы 3');
+    g.saves.save('ch3end', 'Конец главы 3');
+    g.hud.fade(true, 'На лестнице шестого этажа пахнет мокрой штукатуркой.\nДо эвакуации — три часа.').then(() => {
+      g.setMode('ending');
+      setTimeout(() => g.hud.fade(false), 400);
       g.menus.showEnding(data, {
         onMenu: () => g.toMainMenu(),
         onKeepPlaying: () => { g.menus.hide(); g.setMode('play'); g.hud.fade(false); },

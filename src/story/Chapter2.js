@@ -59,9 +59,19 @@ export class Chapter2 {
     this.chase = null; this.tape = null; this.busy = false;
     this.g.npcs.setAnomaly(null);
     const carDown = !!f.c2_car_down;
-    this.doors.up = this.doorTarget.up = f.lift_power && !carDown ? 1 : 0;
-    this.doors.down = this.doorTarget.down = carDown ? 1 : 0;
+    this.doors.up = this.doorTarget.up = this.active && f.lift_power && !carDown ? 1 : 0;
+    this.doors.down = this.doorTarget.down = this.active && carDown ? 1 : 0;
+    for (const k of ['lift_a', 'lift_b']) {
+      const parts = this.g.world.named.get(k)?.parts;
+      const open = k === 'lift_a' ? this.doors.up : this.doors.down;
+      if (parts?.left && parts.left.userData.baseX !== undefined) { parts.left.position.x = parts.left.userData.baseX - open * 0.4; parts.right.position.x = parts.right.userData.baseX + open * 0.4; }
+    }
     this.sanych.root.visible = this.active && !f.c2_sanych_gone;
+    // Подобранные предметы не должны оставаться на полу после загрузки
+    this.g.world.hidePickup('sanych_torch', !!f.took_sanych_torch);
+    this.g.world.hidePickup('sanych_phone_model', this.g.inventory.has('sanych_phone'));
+    const reels = this.g.world.named.get('tape_deck')?.parts;
+    if (reels?.reelL) { reels.reelL.visible = reels.reelR.visible = !this.g.inventory.has('tape_1984'); }
     if (LAB_STATE.crystalMat) LAB_STATE.crystalMat.color.setHex(f.resonator_off ? 0x14151c : 0x6a74a8);
     const lever = this.g.world.named.get('resonator')?.parts.lever;
     if (lever) lever.rotation.x = f.resonator_off ? 0.6 : -0.5;
@@ -160,6 +170,7 @@ export class Chapter2 {
         important: () => true,
         action: () => {
           this.set('took_sanych_torch');
+          g.world.hidePickup('sanych_torch');
           this.gs.data.player.flashBattery = 100;
           g.updateFlashlight();
           this.say('Фонарик Саныча. Ещё горит — светит на дверь котельной. Забираю его батарейки.', 5);
@@ -170,6 +181,7 @@ export class Chapter2 {
         important: () => true,
         action: () => {
           inv.add('sanych_phone');
+          g.world.hidePickup('sanych_phone_model');
           for (const k of ['sanych_1', 'sanych_2', 'sanych_3']) g.gallery.ensureReceived(k, 'sanych');
           this.ctx.clue('sanych_photos');
           g.reader.show({ screen: true, title: 'Телефон Саныча', text: 'Исходящие (не отправлено):\n\n19:12 → «Тополиная 14»: это чё\n19:44 → «Тополиная 14»: не верьте мне если я поднимусь\n\nГалерея: 3 снимка (скопированы в твою «Галерею»).\n\nПоследний снят в 19:40. Саныч на нём — со спины.' });
@@ -482,6 +494,8 @@ export class Chapter2 {
       }, 1600);
     } else if (outcome === 'tape') {
       g.inventory.add('tape_1984');
+      const reels = g.world.named.get('tape_deck')?.parts;
+      if (reels?.reelL) reels.reelL.visible = reels.reelR.visible = false;
       this.sound('tap', { bus: 'ui' });
       this.say('Катушка тяжёлая и тёплая, будто её только что держали в руках.', 4);
     }

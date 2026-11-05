@@ -37,6 +37,8 @@ import { EndingManager } from '../story/EndingManager.js';
 import { createInteractions } from '../story/Interactions.js';
 import { Chapter2 } from '../story/Chapter2.js';
 import { HomeMechanics } from '../story/HomeMechanics.js';
+import { Chapter3 } from '../story/Chapter3.js';
+import { nightLog, C3_START } from '../data/chapter3.js';
 import { dayLog } from '../data/chapter2.js';
 import { t2 } from '../utils/time.js';
 import { HUD } from '../ui/HUD.js';
@@ -128,9 +130,10 @@ export class Game {
     this.storyCtx = new StoryContext(this);
     for (const sys of [this.chats, this.contacts, this.dialogue, this.events]) sys.ctx = this.storyCtx;
     this.ch2 = new Chapter2(this);
+    this.ch3 = new Chapter3(this);
     this.home = new HomeMechanics(this);
     const baseResolver = createInteractions(this);
-    this.interaction.setResolver((id, obj) => this.ch2.resolve(id) || this.home.resolve(id, obj) || baseResolver(id, obj));
+    this.interaction.setResolver((id, obj) => this.ch3.resolve(id) || this.ch2.resolve(id) || this.home.resolve(id, obj) || baseResolver(id, obj));
 
     this.buildMenuProps();
     this.bindEvents();
@@ -190,6 +193,8 @@ export class Game {
 
   setMode(mode) {
     this.mode = mode;
+    // Баннеры уведомлений живут отдельно от HUD — прячем их вне игры, чтобы не перекрывали меню и итоги
+    if (this.hud?.bannerEl) this.hud.bannerEl.style.display = mode === 'play' || mode === 'camera' ? '' : 'none';
     const playing = mode === 'play' || mode === 'camera';
     this.controls.show(this.isTouch && playing && !this.dialogue.isActive);
     this.hud.setVisible(mode === 'play' || mode === 'camera' || mode === 'peephole');
@@ -275,6 +280,8 @@ export class Game {
       onContinue: () => latest && this.loadGame(latest.slot),
       onLoad: (slot) => this.loadGame(slot),
       onChapter2: () => this.startChapter2(),
+      onChapter3: () => this.startChapter3(),
+      chapter3Meta: this.saves.meta('ch2end') ? 'продолжение после вашей второй главы' : 'можно начать сразу — с исходами по умолчанию',
       chapter2Meta: this.saves.meta('ch1end') ? 'продолжение после вашей первой главы' : 'можно начать сразу — с исходом главы 1 по умолчанию',
     });
   }
@@ -336,6 +343,45 @@ export class Game {
     this.hud.fade(false);
   }
 
+  /** Глава 3: продолжение после конца главы 2 (или состояние по умолчанию) */
+  async startChapter3() {
+    this.menus.hide();
+    await this.audio.init();
+    this.audio.stopAll();
+    await this.hud.fade(true, '28 октября, 05:50.\nДо эвакуации — три часа.\n\nНочью Лиза с седьмого этажа поднялась по лестнице выше девятого.\nИ не вернулась.');
+    let base = null;
+    if (this.gs.data.chapter === 2 && this.gs.data.story.ending2) base = this.gs.serialize();
+    else base = this.saves.load('ch2end');
+    if (base) this.gs.load(base);
+    else { this.defaultChapter1(); this.prepareChapter2State(); this.gs.data.flags.c2_outcome = 'tape'; this.gs.data.flags.c2_escaped = true; this.inventory.add('tape_1984', 1, { silent: true }); }
+    this.prepareChapter3State();
+    this.startPlaying();
+    await wait(3800);
+    this.hud.fade(false);
+  }
+
+  prepareChapter3State() {
+    const d = this.gs.data;
+    d.chapter = 3;
+    d.time = C3_START;
+    d.story.ch2Outcome = d.flags.c2_outcome || 'tape';
+    d.story.ending3 = null;
+    for (const f of ['knock_active', 'radio_on', 'lift_dark', 'basement_dark', 'lift_power', 'c2_car_down', 'c2_in_basement', 'f10_dark']) d.flags[f] = false;
+    d.world.power = { apartment: true, corridor: true };
+    for (const doorObj of this.world.doors.values()) {
+      const def = doorObj.def;
+      Object.assign(this.gs.door(def.id), { open: false, locked: true, chained: false, sealed: false }, def.initial || {}, { _init: true });
+    }
+    this.gs.door('d52').sealed = false;
+    if (d.flags.zina_missing) Object.assign(this.gs.door('d45'), { chained: true, locked: true });
+    d.npcRuntime = {};
+    Object.assign(d.player, { x: START_POSITION.x, z: START_POSITION.z, yaw: START_POSITION.yaw, pitch: -0.05, crouch: false, flashlight: false, flashBattery: 100 });
+    if (!this.inventory.has('flashlight')) this.inventory.add('flashlight', 1, { silent: true });
+    Object.assign(d.phone, { battery: 64, charging: false, activeSequences: [], pendingChoices: {}, notifications: [] });
+    this.chats.setVisible('lisa');
+    this.chats.injectHistory(nightLog(this.storyCtx));
+  }
+
   /** Если первой главы не было: типичный исход («предупредил соседей») */
   defaultChapter1() {
     this.gs.reset();
@@ -389,10 +435,12 @@ export class Game {
     this.setMode('play');
     this.rooms.update(0, this.player.pos);
     this.ch2.restore();
+    this.ch3.restore();
     this.home.restore();
+    if ((this.gs.data.chapter || 1) !== 3) this.sm.scene.fog.density = 0.075;
     this.ambience.env = this.rooms.room?.ambient || 'home';
     this.audio.setEnvironment(this.ambience.env);
-    if (this.gs.data.chapter === 1 && this.gs.data.story.ending) this.bus.emit('hud:toast', { text: 'Глава 1 завершена. Можно осмотреться.' });
+    if ((this.gs.data.chapter || 1) === 1 && this.gs.data.story.ending) this.bus.emit('hud:toast', { text: 'Глава 1 завершена. Можно осмотреться.' });
   }
 
   autosave() {
@@ -483,10 +531,21 @@ export class Game {
     this.interaction.enabled = false;
     this.audio.play('tap', { bus: 'sfx', volume: 0.4 });
     this.peepholeTime = 0;
+    // В режиме глазка сенсорные кнопки скрыты — даём явный способ выйти: касание экрана или кнопка
+    this.peepholeEl?.remove();
+    const exitEl = document.createElement('div');
+    exitEl.className = 'peephole-exit';
+    exitEl.innerHTML = '<button type="button">Отойти от двери</button>';
+    exitEl.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); this.exitPeephole(true); });
+    this.uiRoot.appendChild(exitEl);
+    this.peepholeEl = exitEl;
   }
 
-  exitPeephole() {
-    if (this.mode !== 'peephole' || this.peepholeTime < 0.4) return;
+  exitPeephole(byTap = false) {
+    if (this.mode !== 'peephole') return;
+    if (this.peepholeTime < (byTap ? 0.6 : 0.4)) return;
+    this.peepholeEl?.remove();
+    this.peepholeEl = null;
     this.cam.override = null;
     this.hud.showPeephole(false);
     this.setMode('play');
@@ -612,6 +671,7 @@ export class Game {
     this.events.update(dt);
     this.story.update(dt);
     this.ch2.update(dt);
+    this.ch3.update(dt);
     this.home.update(dt);
     this.ambience.update(dt, this.player.pos);
     this.audio.updateListener(this.sm.camera, dt);

@@ -43,7 +43,7 @@ export class MenuManager {
   }
 
   // ------------------------------------------------------------ главное меню
-  showMain({ canContinue = false, continueMeta = '', onNew, onContinue, onLoad, onChapter2, chapter2Meta = '' } = {}) {
+  showMain({ canContinue = false, continueMeta = '', onNew, onContinue, onLoad, onChapter2, chapter2Meta = '', onChapter3, chapter3Meta = '' } = {}) {
     this.hide();
     this.current = 'main';
     this.menuEl = el('div', { class: 'menu main' }, [
@@ -57,12 +57,13 @@ export class MenuManager {
           }),
           this.item('Продолжить', () => onContinue?.(), { disabled: !canContinue, meta: canContinue ? continueMeta : 'нет сохранений' }),
           onChapter2 ? this.item('Глава 2 · Котельная', () => onChapter2(), { meta: chapter2Meta }) : null,
+          onChapter3 ? this.item('Глава 3 · Десятый этаж', () => onChapter3(), { meta: chapter3Meta }) : null,
           this.item('Загрузить', () => this.showSlots('load', (slot) => onLoad?.(slot))),
           this.item('Настройки', () => this.showSettings()),
           this.item('Управление', () => this.showControls()),
           this.item('Об игре', () => this.showAbout()),
         ]),
-        el('div', { class: 'm-foot', text: 'Глава 1 «Первая ночь» · Глава 2 «Котельная»' }),
+        el('div', { class: 'm-foot', text: 'Главы 1–3: «Первая ночь» · «Котельная» · «Десятый этаж»' }),
       ]),
     ]);
     this.root.appendChild(this.menuEl);
@@ -269,7 +270,7 @@ export class MenuManager {
   }
 
   // ------------------------------------------------------------ финал главы
-  showEnding(data, { onMenu, onKeepPlaying, onNext } = {}) {
+  showEnding(data, { onMenu, onKeepPlaying, onNext, nextLabel = 'Глава 2 · Котельная →' } = {}) {
     this.hide();
     this.current = 'ending';
     const stats = el('ul', {}, (data.stats || []).map(([label, value]) => el('li', {}, [el('span', { text: label }), el('b', { text: String(value) })])));
@@ -281,7 +282,7 @@ export class MenuManager {
         stats,
         data.tease ? el('div', { class: 'tease', text: data.tease }) : null,
         el('div', { class: 'acts' }, [
-          onNext ? el('button', { class: 'btn-line', text: 'Глава 2 · Котельная →', onclick: () => { this.tap(); this.hide(); onNext(); } }) : null,
+          onNext ? el('button', { class: 'btn-line', text: nextLabel, onclick: () => { this.tap(); this.hide(); onNext(); } }) : null,
           onKeepPlaying ? el('button', { class: 'btn-line', text: 'Остаться на этаже', onclick: () => { this.tap(); this.hide(); onKeepPlaying(); } }) : null,
           el('button', { class: 'btn-line', text: 'В главное меню', onclick: () => { this.tap(); this.hide(); onMenu?.(); } }),
         ]),

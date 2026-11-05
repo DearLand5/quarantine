@@ -67,6 +67,7 @@ export class LightingSystem {
     if (c === 'emergency') return !w.power.corridor;
     if (c === 'neighbor') return !this.gs.flag('neighbors_dark');
     if (c === 'basement') return !this.gs.flag('basement_dark');
+    if (c === 'f10') return !this.gs.flag('f10_dark');
     if (c === 'lift') return !!this.gs.flag('lift_power') && !this.gs.flag('lift_dark');
     if (c === 'sanych_torch') return !this.gs.flag('took_sanych_torch');
     if (c === 'resonator') return !this.gs.flag('resonator_off');
