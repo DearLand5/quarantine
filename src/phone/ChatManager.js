@@ -61,6 +61,21 @@ export class ChatManager {
     };
   }
 
+  /** Вставить «прошедшие» сообщения (хроника дня между главами). entries: { chat, at, from, text, fake, read } */
+  injectHistory(entries) {
+    for (const e of [...entries].sort((a, b) => a.at - b.at)) {
+      const c = this.chat(e.chat);
+      if (!c) continue;
+      const msg = this.makeMessage(e.chat, { from: e.from, text: e.text, fake: e.fake }, e.at);
+      msg.status = e.read || e.from === 'player' ? 'read' : 'received';
+      c.messages.push(msg);
+      c.visible = true;
+      c.lastActivity = e.at;
+      if (!e.read && e.from !== 'player') c.unread++;
+      this.phone.chatOrder = [e.chat, ...this.phone.chatOrder.filter((x) => x !== e.chat)];
+    }
+  }
+
   chat(id) { return this.phone.chats[id]; }
   def(id) { return CHATS[id]; }
   members(id) { return CHATS[id]?.type === 'group' ? CHATS[id].members : [CHATS[id]?.with].filter(Boolean); }
@@ -449,7 +464,8 @@ export class ChatManager {
     this.ambientTimer = 55 + Math.random() * 70;
     const busy = this.phone.activeSequences.some((r) => (r.inline ? false : (r.ambient || (SEQUENCES[r.seq] || [])[0]?.chat === GROUP)));
     if (busy) { this.ambientTimer = 20; return; }
-    const next = AMBIENT.find((a) => !this.phone.ambientPlayed.includes(a.id) && (!a.cond || this.safe(() => a.cond(this.ctx))));
+    const chapter = this.gs.data.chapter || 1;
+    const next = AMBIENT.find((a) => (a.chapter || 1) === chapter && !this.phone.ambientPlayed.includes(a.id) && (!a.cond || this.safe(() => a.cond(this.ctx))));
     if (!next) return;
     this.phone.ambientPlayed.push(next.id);
     this.phone.activeSequences.push({ uid: `a${this.seqCounter++}`, ambient: next.id, step: 0, phase: 'enter', timer: 0 });

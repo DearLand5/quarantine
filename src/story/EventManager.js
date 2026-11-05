@@ -1,6 +1,9 @@
 // Сюжетные события: условие + действие, срабатывают один раз (или повторно, если repeat).
 // Проверяются дважды в секунду, а также мгновенно по флагам. «Сработавшие» сохраняются.
 import { STORY_EVENTS } from '../data/storyEvents.js';
+import { CH2_EVENTS } from '../data/chapter2.js';
+
+const ALL_EVENTS = [...STORY_EVENTS, ...CH2_EVENTS];
 
 export class EventManager {
   constructor(gameState, bus) {
@@ -19,7 +22,9 @@ export class EventManager {
     if (this.timer > 0) return;
     this.timer = 0.5;
     const now = this.gs.data.stats.playSeconds;
-    for (const ev of STORY_EVENTS) {
+    const chapter = this.gs.data.chapter || 1;
+    for (const ev of ALL_EVENTS) {
+      if ((ev.chapter || 1) !== chapter) continue;
       if (this.fired[ev.id] && !ev.repeat) continue;
       let ok = false;
       try { ok = ev.cond(this.ctx); } catch (e) { console.error(`[Events] ${ev.id}:`, e); }

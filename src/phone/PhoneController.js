@@ -1,6 +1,6 @@
 // Оболочка смартфона: открытие/закрытие, экран блокировки, домашний экран, приложения, статус-бар,
 // заряд батареи, уровень сигнала, звонки и внутренние уведомления.
-import { el, clear, ICONS } from '../utils/dom.js';
+import { el, clear, ICONS, makeSwipeable } from '../utils/dom.js';
 import { fmtTime, fmtDay, fmtWeekday } from '../utils/time.js';
 import { CHARACTERS, charName } from '../data/characters.js';
 import { CLUES } from '../data/items.js';
@@ -88,6 +88,7 @@ export class PhoneController {
     if (this.contacts.active) this.route = { app: 'call', params: {} };
     this.renderApp();
     this.renderStatus();
+    if (this.pendingScream) { this.pendingScream = false; setTimeout(() => { this.scream(); this.bus.emit('sound:play', { name: 'hit', bus: 'music', volume: 0.8 }); }, 900); }
     if (!wasOpen) {
       this.bus.emit('phone:opened');
       this.bus.emit('sound:play', { name: 'tap', bus: 'ui' });
@@ -167,10 +168,12 @@ export class PhoneController {
     wrap.classList.add('ph-lock');
     const notifs = el('div', { class: 'notifs' });
     for (const n of this.notifications.list.slice(0, 8)) {
-      notifs.appendChild(el('div', { class: 'notif', onclick: () => this.go('chat', { chat: n.chat }) }, [
+      const item = el('div', { class: 'notif' }, [
         el('div', { class: 't' }, [el('b', { text: n.title }), el('span', { text: fmtTime(n.time) })]),
         el('div', { text: n.sender ? `${n.sender}: ${n.text}` : n.text }),
-      ]));
+      ]);
+      makeSwipeable(item, { allowUp: false, onTap: () => this.go('chat', { chat: n.chat }), onDismiss: () => { item.remove(); this.notifications.dismiss(n.id); } });
+      notifs.appendChild(item);
     }
     wrap.append(
       el('div', { class: 'date', text: `${fmtWeekday(this.gs.time)}, ${fmtDay(this.gs.time)}` }),
@@ -353,10 +356,35 @@ export class PhoneController {
       el('div', { class: 'ava', style: { background: CHARACTERS[n.from]?.color || '#888' }, text: CHARACTERS[n.from]?.initials || '•' }),
       el('div', { class: 'body' }, [el('div', { class: 'top' }, [el('b', { text: n.title })]), el('div', { class: 'text', text: n.sender ? `${n.sender}: ${n.text}` : n.text })]),
     ]);
-    b.addEventListener('click', () => { b.remove(); this.go('chat', { chat: n.chat }); });
+    makeSwipeable(b, { onTap: () => { b.remove(); this.go('chat', { chat: n.chat }); }, onDismiss: () => { b.remove(); this.notifications.dismiss(n.id); } });
     this.screen.appendChild(b);
-    setTimeout(() => { b.classList.add('out'); setTimeout(() => b.remove(), 300); }, 3200);
+    setTimeout(() => { if (!b.isConnected) return; b.classList.add('out'); setTimeout(() => b.remove(), 300); }, 3600);
     if (this.route.app === 'home' || this.route.app === 'messenger') this.renderApp();
+  }
+
+  /** Скример на экране: процедурное «лицо» без черт поверх любого приложения */
+  scream() {
+    if (!this.isOpen) { this.pendingScream = true; return; }
+    if (!this.screamImg) {
+      const c = document.createElement('canvas');
+      c.width = 270; c.height = 480;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#050605'; ctx.fillRect(0, 0, 270, 480);
+      const g = ctx.createRadialGradient(135, 210, 10, 135, 220, 150);
+      g.addColorStop(0, '#3a3c38'); g.addColorStop(0.6, '#161816'); g.addColorStop(1, '#050605');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.ellipse(135, 220, 92, 128, 0.06, 0, 7); ctx.fill();
+      ctx.fillStyle = '#d8dccf';
+      for (const x of [104, 168]) { ctx.beginPath(); ctx.ellipse(x, 200, 5, 3, 0, 0, 7); ctx.fill(); }
+      const img = ctx.getImageData(0, 0, 270, 480);
+      for (let i = 0; i < img.data.length; i += 4) { const n = (Math.random() - 0.5) * 50; img.data[i] += n; img.data[i + 1] += n; img.data[i + 2] += n; }
+      ctx.putImageData(img, 0, 0);
+      this.screamImg = c.toDataURL('image/jpeg', 0.7);
+    }
+    const ov = el('div', { class: 'ph-dead', style: { background: `#000 url(${this.screamImg}) center/cover`, zIndex: 20 } });
+    this.screen.appendChild(ov);
+    this.screen.classList.remove('glitch'); void this.screen.offsetWidth; this.screen.classList.add('glitch');
+    setTimeout(() => ov.remove(), 380);
   }
 
   glitch() {

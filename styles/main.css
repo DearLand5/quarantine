@@ -44,14 +44,16 @@ button { font-family: inherit; color: inherit; }
   background: radial-gradient(ellipse at center, rgba(0,0,0,0) 45%, rgba(0,0,0,.55) 85%, rgba(0,0,0,.85) 100%);
 }
 #fx-grain {
-  opacity: .07; mix-blend-mode: screen;
+  /* Зерно двигается трансформацией (только композитинг, без перерисовки и без режима наложения) */
+  inset: -64px; opacity: .05;
   background-size: 160px 160px;
-  animation: grain .4s steps(4) infinite;
+  animation: grain .5s steps(4) infinite;
+  will-change: transform;
 }
 #fx-grain.off, #fx-vignette.off { display: none; }
 @keyframes grain {
-  0% { background-position: 0 0; } 25% { background-position: -40px 30px; }
-  50% { background-position: 50px -20px; } 75% { background-position: -20px -50px; } 100% { background-position: 0 0; }
+  0% { transform: translate(0, 0); } 25% { transform: translate(-40px, 30px); }
+  50% { transform: translate(50px, -20px); } 75% { transform: translate(-20px, -50px); } 100% { transform: translate(0, 0); }
 }
 #fx-damage {
   opacity: 0; transition: opacity .6s;

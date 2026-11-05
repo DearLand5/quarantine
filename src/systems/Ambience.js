@@ -27,17 +27,19 @@ export class Ambience {
     this.checkTimer -= dt;
     if (this.checkTimer <= 0) {
       this.checkTimer = 0.5;
+      // Позиционные петли работают только поблизости: каждая — это узлы панорамы и реверба в аудиопотоке
+      const near = (x, z, r) => Math.hypot(playerPos.x - x, playerPos.z - z) < r;
       const w = this.gs.data.world;
       const f = this.gs.data.flags;
       this.ensure('vent', 'vent', true, { bus: 'ambient', volume: 0.35, reverb: false });
       const vent = this.audio.loops.get('vent');
       vent?.setVolume({ corridor: 0.5, stair: 0.3, home: 0.18, neighbor: 0.2 }[this.env] ?? 0.25, 1.5);
       this.ensure('city', 'city', true, { bus: 'ambient', volume: 0.12, reverb: false });
-      this.ensure('fridge', 'fridge', w.power.apartment, { bus: 'ambient', pos: { x: 4.1, y: 0.8, z: -4.15 }, volume: 0.35, ref: 0.8 });
-      this.ensure('fluo', 'fluorescent', w.power.corridor && !w.brokenLamps.includes('L_c5'), { bus: 'ambient', pos: { x: 7.5, y: 2.5, z: 0 }, volume: 0.6, ref: 0.8, rolloff: 2 });
-      this.ensure('clock45', 'clock', true, { bus: 'ambient', pos: { x: -9.6, y: 1.9, z: -7.3 }, volume: 0.5, ref: 0.6, rolloff: 2 });
-      this.ensure('tv50', 'tv', !f.tv50_off, { bus: 'ambient', pos: { x: 0, y: 1.2, z: 2.6 }, volume: 0.5, ref: 1, rolloff: 1.6 });
-      this.ensure('wind', 'wind', true, { bus: 'ambient', pos: { x: 15.3, y: 2.2, z: -1.3 }, volume: 0.5, ref: 1.2 });
+      this.ensure('fridge', 'fridge', w.power.apartment && near(4.1, -4.15, 9), { bus: 'ambient', pos: { x: 4.1, y: 0.8, z: -4.15 }, volume: 0.35, ref: 0.8 });
+      this.ensure('fluo', 'fluorescent', w.power.corridor && !w.brokenLamps.includes('L_c5') && near(7.5, 0, 12), { bus: 'ambient', pos: { x: 7.5, y: 2.5, z: 0 }, volume: 0.6, ref: 0.8, rolloff: 2 });
+      this.ensure('clock45', 'clock', near(-8.6, -5, 9) && !(this.gs.data.chapter === 2 && f.zina_missing), { bus: 'ambient', pos: { x: -9.6, y: 1.9, z: -7.3 }, volume: 0.5, ref: 0.6, rolloff: 2 });
+      this.ensure('tv50', 'tv', !f.tv50_off && near(0, 2.6, 12), { bus: 'ambient', pos: { x: 0, y: 1.2, z: 2.6 }, volume: 0.5, ref: 1, rolloff: 1.6 });
+      this.ensure('wind', 'wind', near(14, 0, 14), { bus: 'ambient', pos: { x: 15.3, y: 2.2, z: -1.3 }, volume: 0.5, ref: 1.2 });
       this.ensure('drone', 'drone', this.tension > 0.3, { bus: 'music', volume: 0.25 * this.tension, fade: 3 });
     }
 

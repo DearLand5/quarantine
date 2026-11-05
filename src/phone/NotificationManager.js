@@ -1,5 +1,5 @@
 // Уведомления: баннеры поверх мира и внутри телефона, звуки и вибрация, список на экране блокировки.
-import { el } from '../utils/dom.js';
+import { el, makeSwipeable } from '../utils/dom.js';
 import { CHARACTERS, charName } from '../data/characters.js';
 import { fmtTime } from '../utils/time.js';
 
@@ -44,6 +44,11 @@ export class NotificationManager {
 
   sound(name) { this.bus.emit('sound:play', { name, bus: 'ui', volume: 0.8 }); }
 
+  dismiss(id) {
+    this.gs.data.phone.notifications = this.list.filter((n) => n.id !== id);
+    this.bus.emit('notify:cleared', { id });
+  }
+
   clearChat(chat) {
     const before = this.list.length;
     this.gs.data.phone.notifications = this.list.filter((n) => n.chat !== chat);
@@ -63,12 +68,13 @@ export class NotificationManager {
         el('div', { class: 'text', text: n.sender ? `${n.sender}: ${n.text}` : n.text }),
       ]),
     ]);
-    banner.addEventListener('pointerdown', (e) => {
-      e.stopPropagation();
-      onTap ? onTap() : this.bus.emit('phone:open', { chat: n.chat });
-      dismiss();
+    let gone = false;
+    const dismiss = () => { if (gone) return; gone = true; banner.classList.add('out'); setTimeout(() => banner.remove(), 300); };
+    makeSwipeable(banner, {
+      onTap: () => { onTap ? onTap() : this.bus.emit('phone:open', { chat: n.chat }); dismiss(); },
+      // Смахнуть — убрать баннер и уведомление из списка на экране блокировки
+      onDismiss: () => { gone = true; banner.remove(); this.dismiss(n.id); },
     });
-    const dismiss = () => { banner.classList.add('out'); setTimeout(() => banner.remove(), 300); };
     this.container.prepend(banner);
     while (this.container.children.length > 3) this.container.lastChild.remove();
     setTimeout(dismiss, kind === 'call' ? 12000 : 4800);

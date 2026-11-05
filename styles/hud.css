@@ -135,7 +135,7 @@
   width: calc(var(--size, 62px) * var(--btn-scale)); height: calc(var(--size, 62px) * var(--btn-scale));
   transform: translate(-50%, -50%);
   border-radius: 50%; border: 1px solid rgba(217,213,199,.28);
-  background: rgba(12, 14, 13, .42); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+  background: rgba(12, 14, 13, .5);
   display: flex; align-items: center; justify-content: center; flex-direction: column;
   color: rgba(217,213,199,.85); font-size: calc(10px * var(--btn-scale)); letter-spacing: .04em;
   transition: background .12s, border-color .12s, opacity .2s;

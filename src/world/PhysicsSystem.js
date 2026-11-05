@@ -10,8 +10,13 @@ export class PhysicsSystem {
   setStatic(colliders) { this.static = colliders; }
   addProvider(fn) { this.dynamicProviders.push(fn); }
 
+  /** Сбросить кэш динамических коллайдеров (вызывается в начале кадра) */
+  beginFrame() { this.dynCache = null; }
+
   collectDynamic() {
+    if (this.dynCache) return this.dynCache;
     const out = [];
+    this.dynCache = out;
     for (const fn of this.dynamicProviders) {
       const res = fn();
       if (res) for (const c of res) if (c) out.push(c);

@@ -3,6 +3,8 @@
 
 function env(ctx, gainNode, t, a, d, peak = 1, sustain = 0) {
   const g = gainNode.gain;
+  a = Math.max(0.004, a);   // слишком резкая атака даёт щелчки
+  peak = Math.min(peak, 0.7);
   g.setValueAtTime(0.0001, t);
   g.exponentialRampToValueAtTime(Math.max(0.0002, peak), t + a);
   g.exponentialRampToValueAtTime(Math.max(0.0001, sustain || 0.0001), t + a + d);
@@ -162,8 +164,8 @@ export const SYNTHS = {
   },
   notify(ctx, out, o) {
     const t = ctx.currentTime;
-    tone(ctx, out, { t, freq: 988, d: 0.12, peak: 0.18 });
-    tone(ctx, out, { t: t + 0.11, freq: 1480, d: 0.22, peak: 0.16 });
+    tone(ctx, out, { t, freq: 988, d: 0.12, peak: 0.11 });
+    tone(ctx, out, { t: t + 0.11, freq: 1480, d: 0.22, peak: 0.09 });
   },
   notify_group(ctx, out, o) {
     const t = ctx.currentTime;
@@ -171,29 +173,39 @@ export const SYNTHS = {
   },
   notify_sys(ctx, out, o) {
     const t = ctx.currentTime;
-    for (let i = 0; i < 3; i++) tone(ctx, out, { t: t + i * 0.28, type: 'square', freq: 1050, d: 0.18, peak: 0.06 });
+    for (let i = 0; i < 3; i++) tone(ctx, out, { t: t + i * 0.28, type: 'triangle', freq: 1050, d: 0.18, peak: 0.07 });
   },
   vibrate(ctx, out, o) {
+    // Вибрация: мягкий синусоидальный гул с амплитудной модуляцией вместо квадратной волны,
+    // которая на динамике телефона звучала как хрип
     const t = ctx.currentTime;
     const pulses = o.pulses || 2;
+    const vol = 0.16 * (o.volume ?? 1);
     for (let i = 0; i < pulses; i++) {
-      const osc = ctx.createOscillator(); osc.type = 'square'; osc.frequency.value = 148 + Math.random() * 6;
-      const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 420;
-      const g = ctx.createGain();
       const s = t + i * 0.42;
-      g.gain.setValueAtTime(0.0001, s); g.gain.linearRampToValueAtTime(0.22 * (o.volume ?? 1), s + 0.02);
-      g.gain.setValueAtTime(0.22 * (o.volume ?? 1), s + 0.26); g.gain.linearRampToValueAtTime(0.0001, s + 0.3);
-      osc.connect(f).connect(g).connect(out);
-      osc.start(s); osc.stop(s + 0.32);
+      const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = 172 + Math.random() * 6;
+      const h2 = ctx.createOscillator(); h2.type = 'sine'; h2.frequency.value = osc.frequency.value * 2;
+      const h2g = ctx.createGain(); h2g.gain.value = 0.18;
+      const am = ctx.createOscillator(); am.frequency.value = 31;
+      const amg = ctx.createGain(); amg.gain.value = 0.25;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, s);
+      g.gain.linearRampToValueAtTime(vol, s + 0.03);
+      g.gain.setValueAtTime(vol, s + 0.24);
+      g.gain.linearRampToValueAtTime(0.0001, s + 0.3);
+      am.connect(amg).connect(g.gain);
+      osc.connect(g); h2.connect(h2g).connect(g);
+      g.connect(out);
+      for (const n of [osc, h2, am]) { n.start(s); n.stop(s + 0.32); }
     }
   },
   send(ctx, out, o, B) {
     const t = ctx.currentTime;
-    burst(ctx, out, B, { t, filter: 'bandpass', freq: 1800, q: 0.8, a: 0.03, d: 0.12, peak: 0.12 });
-    tone(ctx, out, { t, freq: 520, freqEnd: 1040, d: 0.1, peak: 0.06 });
+    burst(ctx, out, B, { t, filter: 'bandpass', freq: 1600, q: 0.8, a: 0.03, d: 0.1, peak: 0.06 });
+    tone(ctx, out, { t, freq: 520, freqEnd: 1040, d: 0.1, peak: 0.04 });
   },
   tap(ctx, out, o, B) {
-    burst(ctx, out, B, { t: ctx.currentTime, freq: 3000, q: 2, d: 0.015, peak: 0.12 });
+    tone(ctx, out, { t: ctx.currentTime, type: 'sine', freq: 1250, freqEnd: 900, d: 0.03, peak: 0.05 });
   },
   shutter(ctx, out, o, B) {
     const t = ctx.currentTime;
@@ -202,8 +214,8 @@ export const SYNTHS = {
   },
   glitch(ctx, out, o, B) {
     const t = ctx.currentTime;
-    for (let i = 0; i < 6; i++) tone(ctx, out, { t: t + i * 0.04, type: 'square', freq: 200 + Math.random() * 2400, d: 0.03, peak: 0.07 });
-    burst(ctx, out, B, { t, freq: 2000, q: 0.5, d: 0.25, peak: 0.12 });
+    for (let i = 0; i < 6; i++) tone(ctx, out, { t: t + i * 0.04, type: 'triangle', freq: 300 + Math.random() * 1800, d: 0.03, peak: 0.04 });
+    burst(ctx, out, B, { t, freq: 1800, q: 0.7, d: 0.22, peak: 0.07 });
   },
   static(ctx, out, o, B) {
     burst(ctx, out, B, { t: ctx.currentTime, freq: 2400, q: 0.4, a: 0.05, d: o.duration || 0.8, peak: 0.25 });
@@ -269,7 +281,7 @@ export const SYNTHS = {
     let t = t0;
     while (t < t0 + dur) {
       const syl = 0.08 + Math.random() * 0.14;
-      const osc = ctx.createOscillator(); osc.type = 'sawtooth';
+      const osc = ctx.createOscillator(); osc.type = 'triangle';
       const p = pitch * (0.85 + Math.random() * 0.35);
       osc.frequency.setValueAtTime(p, t); osc.frequency.linearRampToValueAtTime(p * (0.9 + Math.random() * 0.2), t + syl);
       const [f1, f2] = formants[Math.floor(Math.random() * formants.length)];
@@ -277,7 +289,7 @@ export const SYNTHS = {
       const b2 = ctx.createBiquadFilter(); b2.type = 'bandpass'; b2.frequency.value = f2; b2.Q.value = 7;
       const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = muffle;
       const g = ctx.createGain();
-      env(ctx, g, t, 0.02, syl, (o.volume ?? 1) * 0.55);
+      env(ctx, g, t, 0.025, syl, (o.volume ?? 1) * 0.42);
       osc.connect(b1); osc.connect(b2); b1.connect(lp); b2.connect(lp); lp.connect(g).connect(out);
       osc.start(t); osc.stop(t + syl + 0.05);
       t += syl + (Math.random() < 0.18 ? 0.15 + Math.random() * 0.2 : 0.02);
@@ -321,7 +333,7 @@ export const SYNTHS = {
   ring(ctx, out, o) {
     const t = ctx.currentTime;
     const notes = [659, 784, 988, 784, 659, 523];
-    notes.forEach((n, i) => tone(ctx, out, { t: t + i * 0.16, type: 'triangle', freq: n, d: 0.14, peak: 0.16 }));
+    notes.forEach((n, i) => tone(ctx, out, { t: t + i * 0.16, type: 'sine', freq: n, d: 0.14, peak: 0.1 }));
   },
   breath(ctx, out, o, B) {
     const t = ctx.currentTime;

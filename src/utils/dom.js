@@ -51,3 +51,56 @@ export const ICONS = {
   clip: '<svg viewBox="0 0 24 24"><path d="M20 11l-8.5 8.5a5 5 0 0 1-7-7L13 4a3.3 3.3 0 0 1 4.7 4.7L9.4 17a1.7 1.7 0 0 1-2.4-2.4L15 6.6"/></svg>',
   hang: '<svg viewBox="0 0 24 24"><path d="M3 14c5-5 13-5 18 0l-3 3-3-2v-3a10 10 0 0 0-6 0v3l-3 2z"/></svg>',
 };
+
+/**
+ * Свайп для уведомлений: короткое касание — onTap, смахивание вбок или вверх — onDismiss.
+ * Работает пальцем и мышью (Pointer Events), элемент следует за пальцем и улетает за край.
+ */
+export function makeSwipeable(node, { onTap, onDismiss, allowUp = true } = {}) {
+  let start = null;
+  let dx = 0, dy = 0;
+  node.style.touchAction = 'none';
+  const reset = () => {
+    node.style.transition = 'transform .2s ease, opacity .2s ease';
+    node.style.transform = '';
+    node.style.opacity = '';
+  };
+  node.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    start = { x: e.clientX, y: e.clientY, t: performance.now() };
+    dx = dy = 0;
+    node.setPointerCapture?.(e.pointerId);
+    node.style.transition = 'none';
+  });
+  node.addEventListener('pointermove', (e) => {
+    if (!start) return;
+    dx = e.clientX - start.x;
+    dy = e.clientY - start.y;
+    const horizontal = Math.abs(dx) > Math.abs(dy);
+    const ty = !horizontal && allowUp && dy < 0 ? dy : 0;
+    const tx = horizontal ? dx : 0;
+    node.style.transform = `translate(${tx}px, ${ty}px)`;
+    node.style.opacity = String(Math.max(0.15, 1 - Math.max(Math.abs(tx), Math.abs(ty)) / 220));
+  });
+  const end = (e) => {
+    if (!start) return;
+    e.stopPropagation();
+    const dist = Math.hypot(dx, dy);
+    const quick = performance.now() - start.t < 260;
+    const w = node.offsetWidth || 300;
+    start = null;
+    const horizontal = Math.abs(dx) > Math.abs(dy);
+    if ((horizontal && (Math.abs(dx) > w * 0.3 || (quick && Math.abs(dx) > 40))) || (!horizontal && allowUp && (dy < -40 || (quick && dy < -20)))) {
+      node.style.transition = 'transform .22s ease-out, opacity .22s ease-out';
+      node.style.transform = horizontal ? `translateX(${Math.sign(dx) * (w + 60)}px)` : `translateY(-${node.offsetHeight + 40}px)`;
+      node.style.opacity = '0';
+      setTimeout(() => onDismiss?.(), 210);
+      return;
+    }
+    reset();
+    if (dist < 8 && e.type === 'pointerup') onTap?.();
+  };
+  node.addEventListener('pointerup', end);
+  node.addEventListener('pointercancel', end);
+  return node;
+}

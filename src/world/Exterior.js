@@ -25,7 +25,7 @@ export function buildExterior(assets) {
   skyTex.colorSpace = THREE.SRGBColorSpace;
   const sky = new THREE.Mesh(new THREE.SphereGeometry(110, 16, 12), new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false, depthWrite: false }));
   sky.position.y = -10;
-  sky.renderOrder = -10;
+  sky.renderOrder = 1000;
   group.add(sky);
 
   // Земля двора

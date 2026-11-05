@@ -43,7 +43,7 @@ export class MenuManager {
   }
 
   // ------------------------------------------------------------ главное меню
-  showMain({ canContinue = false, continueMeta = '', onNew, onContinue, onLoad } = {}) {
+  showMain({ canContinue = false, continueMeta = '', onNew, onContinue, onLoad, onChapter2, chapter2Meta = '' } = {}) {
     this.hide();
     this.current = 'main';
     this.menuEl = el('div', { class: 'menu main' }, [
@@ -56,12 +56,13 @@ export class MenuManager {
             onNew?.();
           }),
           this.item('Продолжить', () => onContinue?.(), { disabled: !canContinue, meta: canContinue ? continueMeta : 'нет сохранений' }),
+          onChapter2 ? this.item('Глава 2 · Котельная', () => onChapter2(), { meta: chapter2Meta }) : null,
           this.item('Загрузить', () => this.showSlots('load', (slot) => onLoad?.(slot))),
           this.item('Настройки', () => this.showSettings()),
           this.item('Управление', () => this.showControls()),
           this.item('Об игре', () => this.showAbout()),
         ]),
-        el('div', { class: 'm-foot', text: 'Глава 1 · «Первая ночь» · вертикальный срез' }),
+        el('div', { class: 'm-foot', text: 'Глава 1 «Первая ночь» · Глава 2 «Котельная»' }),
       ]),
     ]);
     this.root.appendChild(this.menuEl);
@@ -172,6 +173,7 @@ export class MenuManager {
         row('Качество', [seg('quality', [['auto', 'Авто'], ['low', 'Низкое'], ['medium', 'Среднее'], ['high', 'Высокое']])], 'Профиль меняется после перезапуска страницы'),
         row('Разрешение рендера', range('renderScale', 0.5, 1, 0.05, pct)),
         row('Адаптивное разрешение', [toggle('adaptiveResolution')], 'Снижает разрешение при падении FPS'),
+        row('Ограничение кадров', [seg('fpsLimit', [[30, '30'], [60, '60']])], '30 — энергосбережение: телефон меньше греется и дольше держит заряд'),
         row('Зерно плёнки', [toggle('grain')]),
         row('Виньетка', [toggle('vignette')]),
         row('Покачивание камеры', [toggle('headBob')]),
@@ -267,7 +269,7 @@ export class MenuManager {
   }
 
   // ------------------------------------------------------------ финал главы
-  showEnding(data, { onMenu, onKeepPlaying } = {}) {
+  showEnding(data, { onMenu, onKeepPlaying, onNext } = {}) {
     this.hide();
     this.current = 'ending';
     const stats = el('ul', {}, (data.stats || []).map(([label, value]) => el('li', {}, [el('span', { text: label }), el('b', { text: String(value) })])));
@@ -279,6 +281,7 @@ export class MenuManager {
         stats,
         data.tease ? el('div', { class: 'tease', text: data.tease }) : null,
         el('div', { class: 'acts' }, [
+          onNext ? el('button', { class: 'btn-line', text: 'Глава 2 · Котельная →', onclick: () => { this.tap(); this.hide(); onNext(); } }) : null,
           onKeepPlaying ? el('button', { class: 'btn-line', text: 'Остаться на этаже', onclick: () => { this.tap(); this.hide(); onKeepPlaying(); } }) : null,
           el('button', { class: 'btn-line', text: 'В главное меню', onclick: () => { this.tap(); this.hide(); onMenu?.(); } }),
         ]),

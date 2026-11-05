@@ -31,6 +31,7 @@ export const STORY_EVENTS = [
   { id: 'figure_stair', cond: (c) => c.flag('after_vetrov') && !c.flag('knock_active') && !c.flag('knock_done'), do: (c) => c.story.setFigure('stair_glass') },
   { id: 'silhouette', cond: (c) => c.flag('after_vetrov') && c.since('vetrov') > 60 && c.playerRoom() === 'corridor' && c.lookingWest() && c.playerX() > -4, do: (c) => c.story.silhouette() },
 
+  { id: 'whisper_behind', cond: (c) => c.flag('after_vetrov') && c.since('vetrov') > 150 && c.playerApartment() === '47' && !c.busy() && Math.random() < 0.02, do: (c) => c.story.whisperBehind() },
   { id: 'mom_call', cond: (c) => c.time >= t('23:02') && c.flag('after_vetrov') && !c.busy(), do: (c) => c.contacts.incoming('mom_evening') },
 
   // Лапин у 52-й, хотя пишет, что дома

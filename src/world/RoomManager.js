@@ -31,13 +31,19 @@ export class RoomManager {
     if (this.cullTimer <= 0) { this.cullTimer = 0.2; this.cull(); }
   }
 
+  get level() { return this.room?.level || 'main'; }
+
   cull() {
     const cur = this.room;
     const inApartment = cur?.apartment || null;
+    const level = this.level;
+    // Наружный вид нужен только на этажах дома
+    if (this.world.exterior) this.world.exterior.group.visible = level === 'main';
     for (const [zone, meshes] of this.zoneMeshes) {
       const room = this.world.rooms.get(zone);
       let visible = true;
-      if (room) {
+      if (room && (room.level || 'main') !== level) visible = false;
+      else if (room) {
         if (room.apartment && room.apartment !== inApartment) {
           const door = this.world.getDoor(ENTRY_DOOR[room.apartment]);
           visible = !door || !door.isClosed;

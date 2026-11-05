@@ -36,7 +36,11 @@ export class StoryManager {
       if (tags.includes('figure')) { this.g.storyCtx.clue('figure_photo'); this.g.bus.emit('sound:play', { name: 'sting', bus: 'music', base: 46, duration: 5 }); }
       if (tags.includes('gena52')) this.g.storyCtx.clue('gena_lied');
     });
-    bus.on('chat:read', ({ chat }) => { if (chat === 'house' || chat === 'mchs') this.g.quests.objective('look_around', 'phone'); });
+    bus.on('chat:read', ({ chat }) => {
+      if (chat !== 'house' && chat !== 'mchs') return;
+      if ((this.gs.data.chapter || 1) === 2) { if (this.g.quests.isActive('c2_main')) this.g.quests.objective('c2_main', 'read'); }
+      else this.g.quests.objective('look_around', 'phone');
+    });
   }
 
   get gs() { return this.g.gs; }
@@ -69,8 +73,14 @@ export class StoryManager {
       this.silhouetteT -= dt;
       if (this.silhouetteT <= 0 || g.player.pos.x < -4.5) {
         this.silhouetteT = 0;
-        g.bus.emit('lights:flicker', { circuit: 'corridor', duration: 1.2 });
-        setTimeout(() => this.setFigure(this.gs.flag('knock_done') ? null : 'stair_glass'), 400);
+        g.bus.emit('lights:flicker', { circuit: 'corridor', duration: 1.4 });
+        // В темноте мигания фигура делает «шаг» к игроку — и пропадает
+        setTimeout(() => {
+          const e = g.npcs.echo.root;
+          e.position.x = Math.min(g.player.pos.x - 3.2, -5.5);
+          g.bus.emit('sound:play', { name: 'steps_far', pos: { x: e.position.x, y: 0.2, z: 0 }, count: 2, interval: 0.25 });
+        }, 350);
+        setTimeout(() => this.setFigure(this.gs.flag('knock_done') ? null : 'stair_glass'), 900);
       }
     }
     if (this.gs.flag('radio_on')) {
@@ -88,6 +98,40 @@ export class StoryManager {
       }
     }
     if (this.knock) this.updateKnock(dt);
+    if (this.lunge && g.mode === 'peephole') this.updateLunge(dt);
+  }
+
+  updateLunge(dt) {
+    const L = this.lunge;
+    const g = this.g;
+    L.t += dt;
+    const e = g.npcs.echo.root;
+    if (L.t > 1.9 && !L.done) {
+      L.done = true;
+      g.bus.emit('sound:play', { name: 'hit', bus: 'music', volume: 1 });
+      g.bus.emit('sound:play', { name: 'knock', pos: { x: 0, y: 1.5, z: -0.9 }, count: 1, volume: 1.4 });
+      g.cam.addShake(1.1);
+      g.hud.damage(true);
+      setTimeout(() => g.hud.damage(false), 900);
+    }
+    if (L.done) {
+      // Лицо прижимается к глазку за доли секунды
+      e.position.z += (-0.78 - e.position.z) * Math.min(1, dt * 14);
+      e.position.y += (-0.32 - e.position.y) * Math.min(1, dt * 14);
+    }
+    if (L.t > 2.9) { g.peepholeTime = 1; e.position.y = 0; g.exitPeephole(); }
+  }
+
+  /** Шёпот за спиной: звук ставится в точку прямо позади камеры */
+  whisperBehind() {
+    const g = this.g;
+    const f = g.cam.forward();
+    const pos = { x: g.player.pos.x - f.x * 0.55, y: 1.55, z: g.player.pos.z - f.z * 0.55 };
+    g.bus.emit('sound:play', { name: 'whisper', pos, duration: 1.4, volume: 1.1, ref: 0.4 });
+    g.bus.emit('sound:play', { name: 'breath', pos, volume: 0.9 });
+    g.bus.emit('caption:sound', { text: '[прямо за спиной кто-то шепчет: «Кирилл»]' });
+    g.bus.emit('lights:flicker', { circuit: 'apartment', duration: 0.9 });
+    g.ambience.setTension(Math.max(g.ambience.tension, 0.55));
   }
 
   // ------------------------------------------------------------ разговоры
@@ -233,6 +277,18 @@ export class StoryManager {
     setTimeout(() => this.gs.setFlag('lift_ghost_done'), 7000);
   }
 
+  /** Лицо на экране телефона на долю секунды */
+  phoneScream() {
+    const g = this.g;
+    g.phone.scream();
+    if (g.phone.isOpen) {
+      g.bus.emit('sound:play', { name: 'hit', bus: 'music', volume: 0.8 });
+      g.cam.addShake(0.5);
+    } else {
+      g.bus.emit('sound:play', { name: 'vibrate', bus: 'ui', pulses: 4, volume: 1 });
+    }
+  }
+
   tearSeal() {
     const st = this.gs.door('d52');
     if (!st.sealed) return;
@@ -311,7 +367,13 @@ export class StoryManager {
       this.g.bus.emit('sound:play', { name: 'heartbeat', bus: 'sfx', count: 5 });
       setTimeout(() => this.g.bus.emit('sound:play', { name: 'sting', bus: 'music', base: 41, duration: 6 }), 600);
     }
+    if (knockNow && !this.gs.flag('peephole_lunge')) {
+      // Скример: через пару секунд фигура бросается к глазку
+      this.gs.setFlag('peephole_lunge');
+      this.lunge = { t: 0, done: false };
+    }
     this.g.enterPeephole(pos, q, () => {
+      this.lunge = null;
       if (knockNow) {
         this.setFigure(null);
         this.g.bus.emit('subtitle', { who: '', text: 'Халат Марины. Её волосы. Но она на голову выше. И стоит, прижавшись лбом к двери, не шевелясь.', duration: 6 });

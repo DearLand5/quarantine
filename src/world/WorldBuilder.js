@@ -8,6 +8,8 @@ import { buildProp } from './Props.js';
 import { Door } from './Door.js';
 import { batchStatic } from './StaticBatcher.js';
 import { buildExterior } from './Exterior.js';
+import { BASEMENT_ROOMS, BASEMENT_DOORS, BASEMENT_FIXTURES, BASEMENT_FURNISHING } from '../data/basement.js';
+import './PropsBasement.js';
 
 const HIT_MAT = new THREE.MeshBasicMaterial({ visible: false });
 const GAP = 0.14;
@@ -31,10 +33,10 @@ export class WorldBuilder {
   }
 
   build() {
-    for (const room of ROOMS) this.buildRoom(room);
-    for (const def of DOORS) this.buildDoor(def);
-    for (const item of FURNISHING) this.placeItem(item);
-    for (const fx of FIXTURES) this.buildFixture(fx);
+    for (const room of [...ROOMS, ...BASEMENT_ROOMS]) this.buildRoom(room);
+    for (const def of [...DOORS, ...BASEMENT_DOORS]) this.buildDoor(def);
+    for (const item of [...FURNISHING, ...BASEMENT_FURNISHING]) this.placeItem(item);
+    for (const fx of [...FIXTURES, ...BASEMENT_FIXTURES]) this.buildFixture(fx);
     this.exterior = buildExterior(this.assets);
     this.root.add(this.exterior.group);
     // Объединяем статическую геометрию

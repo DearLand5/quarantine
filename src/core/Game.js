@@ -35,6 +35,9 @@ import { StoryContext } from '../story/StoryContext.js';
 import { StoryManager } from '../story/StoryManager.js';
 import { EndingManager } from '../story/EndingManager.js';
 import { createInteractions } from '../story/Interactions.js';
+import { Chapter2 } from '../story/Chapter2.js';
+import { dayLog } from '../data/chapter2.js';
+import { t2 } from '../utils/time.js';
 import { HUD } from '../ui/HUD.js';
 import { MenuManager } from '../ui/MenuManager.js';
 import { DialogueUI } from '../ui/DialogueUI.js';
@@ -123,7 +126,9 @@ export class Game {
     this.endings = new EndingManager(this);
     this.storyCtx = new StoryContext(this);
     for (const sys of [this.chats, this.contacts, this.dialogue, this.events]) sys.ctx = this.storyCtx;
-    this.interaction.setResolver(createInteractions(this));
+    this.ch2 = new Chapter2(this);
+    const baseResolver = createInteractions(this);
+    this.interaction.setResolver((id, obj) => this.ch2.resolve(id) || baseResolver(id, obj));
 
     this.buildMenuProps();
     this.bindEvents();
@@ -191,7 +196,8 @@ export class Game {
 
   // ------------------------------------------------------------ состояние мира
   applyStateToWorld() {
-    for (const def of DOORS) {
+    for (const doorObj of this.world.doors.values()) {
+      const def = doorObj.def;
       const st = this.gs.door(def.id);
       if (!st._init) Object.assign(st, { open: false, locked: true, chained: false, sealed: false }, def.initial || {}, { _init: true });
       const door = this.world.getDoor(def.id);
@@ -266,6 +272,8 @@ export class Game {
       onNew: () => this.newGame(),
       onContinue: () => latest && this.loadGame(latest.slot),
       onLoad: (slot) => this.loadGame(slot),
+      onChapter2: () => this.startChapter2(),
+      chapter2Meta: this.saves.meta('ch1end') ? 'продолжение после вашей первой главы' : 'можно начать сразу — с исходом главы 1 по умолчанию',
     });
   }
 
@@ -310,6 +318,59 @@ export class Game {
     this.bus.emit('hud:toast', { text: `Загружено: ${fmtTime(this.gs.time)}` });
   }
 
+  /** Глава 2: продолжение сохранения конца главы 1 (или состояние по умолчанию) */
+  async startChapter2() {
+    this.menus.hide();
+    await this.audio.init();
+    this.audio.stopAll();
+    await this.hud.fade(true, '27 октября. Вторые сутки карантина.\n\nДнём военные подняли к окнам первого этажа сухпайки на верёвках.\nНикто ничего не объяснил.\n\n22:05. Квартира 47.');
+    let base = null;
+    if ((this.gs.data.chapter || 1) === 1 && this.gs.data.story.ending) base = this.gs.serialize();
+    else base = this.saves.load('ch1end');
+    if (base) this.gs.load(base); else this.defaultChapter1();
+    this.prepareChapter2State();
+    this.startPlaying();
+    await wait(3800);
+    this.hud.fade(false);
+  }
+
+  /** Если первой главы не было: типичный исход («предупредил соседей») */
+  defaultChapter1() {
+    this.gs.reset();
+    this.rel.ensureAll();
+    this.chats.initNewGame();
+    for (const f of ['got_flashlight', 'inhaler_delivered', 'blackout', 'breaker_fixed', 'after_vetrov', 'gena_said_home', 'gena_52_done', 'denis_smoking', 'denis_back', 'knock_done', 'knock_warned', 'aftermath_done', 'lift_ghost_done']) this.gs.data.flags[f] = true;
+    this.gs.data.inventory = [{ id: 'flashlight', qty: 1 }, { id: 'keys47', qty: 1 }];
+    this.gs.data.story.ch1Outcome = 'warned';
+    this.gs.data.story.ending = 'warned';
+    this.rel.adjust('marina', { trust: 20 });
+    this.rel.adjust('zinaida', { trust: 15 });
+    this.rel.adjust('denis', { trust: 10 });
+  }
+
+  prepareChapter2State() {
+    const d = this.gs.data;
+    d.chapter = 2;
+    d.time = t2('22:05');
+    d.story.ch1Outcome = d.story.ch1Outcome || d.story.outcome || 'warned';
+    d.story.ending2 = null;
+    for (const f of ['knock_active', 'radio_on', 'signal_jam', 'lift_dark', 'basement_dark', 'lift_power', 'c2_car_down', 'c2_in_basement']) d.flags[f] = false;
+    d.world.power = { apartment: true, corridor: true };
+    d.world.breakerTripped = false;
+    for (const doorObj of this.world.doors.values()) {
+      const def = doorObj.def;
+      const st = this.gs.door(def.id);
+      Object.assign(st, { open: false, locked: true, chained: false, sealed: false }, def.initial || {}, { _init: true });
+    }
+    this.gs.door('d52').sealed = false;
+    if (d.flags.zina_missing) Object.assign(this.gs.door('d45'), { chained: true, locked: true });
+    d.npcRuntime = {};
+    Object.assign(d.player, { x: START_POSITION.x, z: START_POSITION.z, yaw: START_POSITION.yaw, pitch: -0.05, crouch: false, flashlight: false, flashBattery: 100 });
+    if (!this.inventory.has('flashlight')) this.inventory.add('flashlight', 1, { silent: true });
+    Object.assign(d.phone, { battery: 88, charging: false, activeSequences: [], pendingChoices: {}, notifications: [] });
+    this.chats.injectHistory(dayLog(this.storyCtx));
+  }
+
   startPlaying() {
     this.dialogue.end();
     this.applyStateToWorld();
@@ -325,9 +386,10 @@ export class Game {
     this.chats.ambientTimer = 70;
     this.setMode('play');
     this.rooms.update(0, this.player.pos);
+    this.ch2.restore();
     this.ambience.env = this.rooms.room?.ambient || 'home';
     this.audio.setEnvironment(this.ambience.env);
-    if (this.gs.data.story.ending) this.bus.emit('hud:toast', { text: 'Глава 1 завершена. Можно осмотреться.' });
+    if (this.gs.data.chapter === 1 && this.gs.data.story.ending) this.bus.emit('hud:toast', { text: 'Глава 1 завершена. Можно осмотреться.' });
   }
 
   autosave() {
@@ -478,17 +540,38 @@ export class Game {
   }
 
   // ------------------------------------------------------------ игровой цикл
+  /** Сколько кадров в секунду нужно сейчас. На экранах 90/120 Гц браузер вызывает rAF чаще — это и греет телефон. */
+  frameBudget() {
+    const cap = Number(this.settings.get('fpsLimit')) || 60;
+    if (this.mode === 'pause' || this.mode === 'ending') return 0;         // картинка неподвижна
+    if (this.mode === 'menu' || this.mode === 'boot') return Math.min(cap, 30);
+    if (this.reader.isOpen || this.inventoryUI.isOpen) return Math.min(cap, 20);
+    if (this.phone.isOpen) return Math.min(cap, 30);                        // мир за телефоном затемнён
+    return cap;
+  }
+
   loop(now) {
     requestAnimationFrame((t) => this.loop(t));
-    const dt = Math.min(0.05, Math.max(0.0001, (now - (this.last || now)) / 1000));
+    const budget = this.frameBudget();
+    const elapsed = now - (this.last || now);
+    if (budget === 0) {
+      // Пауза: дорисовываем пару кадров после смены режима и больше не нагружаем GPU
+      if (this.staticFrames > 1) { this.last = now; return; }
+      this.staticFrames = (this.staticFrames || 0) + 1;
+    } else {
+      this.staticFrames = 0;
+      if (this.last && elapsed < 1000 / budget - 1.5) return;
+    }
+    const dt = Math.min(0.05, Math.max(0.0001, elapsed / 1000));
     this.last = now;
     try {
+      this.physics.beginFrame();
       this.update(dt);
       this.sm.render();
     } catch (e) {
       console.error('[Game] ошибка кадра', e);
     }
-    this.sm.trackFrame(dt);
+    if (budget >= 45) this.sm.trackFrame(dt);
   }
 
   update(dt) {
@@ -525,8 +608,9 @@ export class Game {
     this.contacts.update(dt);
     this.events.update(dt);
     this.story.update(dt);
+    this.ch2.update(dt);
     this.ambience.update(dt, this.player.pos);
-    this.audio.updateListener(this.sm.camera);
+    this.audio.updateListener(this.sm.camera, dt);
     this.phone.update(dt, { chargeOk: this.rooms.current === 'room47' });
 
     // Второстепенное — раз в четверть секунды

@@ -366,7 +366,7 @@ export const SEQUENCES = {
     { chat: 'unknown', from: 'unknown', typing: 0, text: 'Кирилл.' },
     { chat: 'unknown', from: 'unknown', delay: 3, typing: 0, text: 'Не открывай, когда стучат. Это не они.' },
     { chat: 'unknown', from: 'unknown', delay: 3, typing: 0, text: 'Они учатся голосам. Твой они ещё не знают.' },
-    { do: (c) => c.phone.glitch() },
+    { do: (c) => { c.phone.glitch(); c.story.phoneScream(); } },
   ],
 
   note_drop: [

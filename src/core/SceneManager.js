@@ -21,7 +21,7 @@ export class SceneManager {
     this.renderer = new THREE.WebGLRenderer({
       canvas,
       antialias: this.qualityName === 'high',
-      powerPreference: 'high-performance',
+      powerPreference: 'default',
       stencil: false,
     });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;

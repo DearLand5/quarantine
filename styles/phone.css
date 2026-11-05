@@ -80,7 +80,7 @@
 .ph-lock .date { font-size: .9em; opacity: .75; margin-top: 1.2em; }
 .ph-lock .clock { font-size: 4.4em; font-weight: 300; letter-spacing: -.02em; line-height: 1; margin-top: .1em; }
 .ph-lock .notifs { width: 100%; margin-top: 1.6em; display: flex; flex-direction: column; gap: .5em; overflow-y: auto; flex: 1; }
-.ph-lock .notif { background: rgba(255,255,255,.08); backdrop-filter: blur(6px); border-radius: 1em; padding: .7em .9em; font-size: .88em; cursor: pointer; }
+.ph-lock .notif { background: rgba(255,255,255,.1); border-radius: 1em; padding: .7em .9em; font-size: .88em; cursor: pointer; }
 .ph-lock .notif .t { display: flex; justify-content: space-between; opacity: .65; font-size: .85em; margin-bottom: .15em; }
 .ph-lock .notif b { font-weight: 600; }
 .ph-lock .unlock { margin-top: auto; padding: 1em; opacity: .65; font-size: .85em; animation: pulse 2.4s infinite; cursor: pointer; text-align: center; width: 100%; }

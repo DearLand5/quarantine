@@ -14,6 +14,10 @@ export class StoryContext {
   }
 
   get story() { return this.g.story; }
+  get ch2() { return this.g.ch2; }
+  get chapter() { return this.g.gs.data.chapter || 1; }
+  ch1Outcome() { return this.g.gs.data.story.ch1Outcome || this.g.gs.data.story.outcome || 'warned'; }
+  near(x, z, r) { return Math.hypot(this.g.player.pos.x - x, this.g.player.pos.z - z) < r; }
   get time() { return this.g.gs.time; }
   get playSeconds() { return this.g.gs.data.stats.playSeconds; }
 

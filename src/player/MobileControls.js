@@ -162,10 +162,17 @@ export class MobileControls {
     this.joy.classList.remove('active');
   }
 
-  setBadge(n) { this.badge.textContent = n > 0 ? String(n > 99 ? '99+' : n) : ''; }
-  setToggle(id, on) { this.buttons[id]?.classList.toggle('toggled', !!on); }
-  setGlow(id, on) { this.buttons[id]?.classList.toggle('glow', !!on); }
-  setDim(id, on) { this.buttons[id]?.classList.toggle('dim', !!on); }
+  setBadge(n) {
+    const v = n > 0 ? String(n > 99 ? '99+' : n) : '';
+    if (this.badge.textContent !== v) this.badge.textContent = v;
+  }
+  setClass(id, cls, on) {
+    const b = this.buttons[id];
+    if (b && b.classList.contains(cls) !== !!on) b.classList.toggle(cls, !!on);
+  }
+  setToggle(id, on) { this.setClass(id, 'toggled', on); }
+  setGlow(id, on) { this.setClass(id, 'glow', on); }
+  setDim(id, on) { this.setClass(id, 'dim', on); }
 
   show(v) {
     this.el.classList.toggle('hidden', !v);

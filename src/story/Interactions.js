@@ -75,6 +75,7 @@ export function createInteractions(g) {
 
   function doorHandler(id) {
     const def = DOOR_DEFS[id];
+    if (!def) return null;
     return {
       label: () => {
         const st = gs.door(id);

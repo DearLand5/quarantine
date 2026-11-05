@@ -132,6 +132,9 @@ export class HUD {
   }
 
   setFlash(has, on, battery) {
+    const key = `${has}|${on}|${Math.round(battery)}`;
+    if (key === this.flashKey) return;
+    this.flashKey = key;
     this.flashMeter.classList.toggle('hidden', !has);
     this.flashMeter.classList.toggle('off', !on);
     this.flashMeter.classList.toggle('low', battery < 20);

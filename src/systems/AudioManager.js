@@ -3,7 +3,7 @@
 // Контекст создаётся только после жеста пользователя (ограничение мобильных браузеров).
 import { SYNTHS, LOOPS, makeNoiseBuffers, makeImpulse } from './SoundSynth.js';
 
-const ENV_REVERB = { home: 0.08, neighbor: 0.1, corridor: 0.28, stair: 0.45 };
+const ENV_REVERB = { home: 0.08, neighbor: 0.1, corridor: 0.28, stair: 0.45, basement: 0.55 };
 
 export class AudioManager {
   constructor(bus, settings) {
@@ -17,6 +17,11 @@ export class AudioManager {
     this.occluder = null;   // функция (x0,z0,x1,z1) -> bool
     this.listenerPos = { x: 0, y: 1.6, z: 0 };
     this.lowQuality = false;
+    // На телефонах: больше аудиобуфер, дешёвая панорама и короткий реверб — иначе звук «хрипит»
+    // из-за перегрузки аудиопотока и клиппинга на маленьком динамике.
+    this.mobile = matchMedia('(pointer: coarse)').matches || /Android|iPhone|iPad/i.test(navigator.userAgent);
+    this.active = 0;          // число одновременно звучащих одноразовых звуков
+    this.listenerTimer = 0;
     this.unsubs = [
       bus.on('settings:changed', () => this.applyVolumes()),
       bus.on('sound:play', (e) => this.play(e.name, e)),
@@ -29,14 +34,19 @@ export class AudioManager {
     if (this.ctx) { if (this.ctx.state === 'suspended') await this.ctx.resume(); return; }
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) { console.warn('[Audio] Web Audio недоступен'); return; }
-    this.ctx = new AC({ latencyHint: 'interactive' });
+    try { this.ctx = new AC({ latencyHint: this.mobile ? 'playback' : 'interactive' }); }
+    catch (e) { this.ctx = new AC(); }
     const ctx = this.ctx;
     this.buffers = makeNoiseBuffers(ctx);
 
     this.master = ctx.createGain();
+    // Запас по громкости + мягкий лимитер: сумма многих синтезированных голосов не уходит в перегруз
+    this.headroom = ctx.createGain();
+    this.headroom.gain.value = this.mobile ? 0.62 : 0.78;
     const comp = ctx.createDynamicsCompressor();
-    comp.threshold.value = -14; comp.ratio.value = 4;
-    this.master.connect(comp).connect(ctx.destination);
+    comp.threshold.value = -18; comp.knee.value = 12; comp.ratio.value = 6;
+    comp.attack.value = 0.004; comp.release.value = 0.22;
+    this.master.connect(this.headroom).connect(comp).connect(ctx.destination);
 
     this.buses = {};
     for (const name of ['sfx', 'ambient', 'music', 'voice', 'ui']) {
@@ -46,7 +56,7 @@ export class AudioManager {
     }
     // Реверберация: общий посыл, уровень зависит от помещения
     this.reverb = ctx.createConvolver();
-    this.reverb.buffer = makeImpulse(ctx, 2.2, 3.2);
+    this.reverb.buffer = makeImpulse(ctx, this.mobile ? 1.3 : 2.2, 3.2);
     this.reverbSend = ctx.createGain();
     this.reverbSend.gain.value = 0.15;
     this.reverbSend.connect(this.reverb).connect(this.master);
@@ -105,7 +115,7 @@ export class AudioManager {
     let panner = null;
     if (opts.pos) {
       panner = ctx.createPanner();
-      panner.panningModel = this.lowQuality ? 'equalpower' : 'HRTF';
+      panner.panningModel = this.lowQuality || this.mobile ? 'equalpower' : 'HRTF';
       panner.distanceModel = 'inverse';
       panner.refDistance = opts.ref || 1.2;
       panner.rolloffFactor = opts.rolloff || 1.3;
@@ -132,7 +142,12 @@ export class AudioManager {
   }
 
   play(name, opts = {}) {
-    if (!this.ready) return;
+    if (!this.ready || this.ctx.state !== 'running') return;
+    // Ограничение полифонии: второстепенные звуки пропускаются, если и так звучит много
+    const minor = name === 'footstep' || name === 'tap' || name === 'drip';
+    if (this.active > (this.mobile ? 14 : 28) && minor) return;
+    this.active++;
+    setTimeout(() => { this.active--; }, ((opts.duration || 1.5) + 0.5) * 1000);
     try {
       const out = this.makeOutput(opts);
       const file = this.fileBuffers.get(name);
@@ -187,8 +202,13 @@ export class AudioManager {
   stopLoop(id, fade) { this.loops.get(id)?.stop(fade); }
   hasLoop(id) { return this.loops.has(id); }
 
-  updateListener(camera) {
+  updateListener(camera, dt = 0.016) {
     if (!this.ready) return;
+    // Не чаще 30 раз в секунду и прямой записью значений: автоматизация каждого кадра
+    // копит события в аудиопотоке и нагружает процессор
+    this.listenerTimer -= dt;
+    if (this.listenerTimer > 0) return;
+    this.listenerTimer = 1 / 30;
     const l = this.ctx.listener;
     const p = camera.getWorldPosition(this._p || (this._p = camera.position.clone()));
     this.listenerPos.x = p.x; this.listenerPos.y = p.y; this.listenerPos.z = p.z;
@@ -197,9 +217,10 @@ export class AudioManager {
     const ux = e[4], uy = e[5], uz = e[6];
     const t = this.ctx.currentTime;
     if (l.positionX) {
-      l.positionX.setTargetAtTime(p.x, t, 0.02); l.positionY.setTargetAtTime(p.y, t, 0.02); l.positionZ.setTargetAtTime(p.z, t, 0.02);
-      l.forwardX.setTargetAtTime(fx, t, 0.02); l.forwardY.setTargetAtTime(fy, t, 0.02); l.forwardZ.setTargetAtTime(fz, t, 0.02);
-      l.upX.setTargetAtTime(ux, t, 0.02); l.upY.setTargetAtTime(uy, t, 0.02); l.upZ.setTargetAtTime(uz, t, 0.02);
+      void t;
+      l.positionX.value = p.x; l.positionY.value = p.y; l.positionZ.value = p.z;
+      l.forwardX.value = fx; l.forwardY.value = fy; l.forwardZ.value = fz;
+      l.upX.value = ux; l.upY.value = uy; l.upZ.value = uz;
     } else {
       l.setPosition(p.x, p.y, p.z);
       l.setOrientation(fx, fy, fz, ux, uy, uz);

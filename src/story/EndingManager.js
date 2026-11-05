@@ -56,14 +56,72 @@ export class EndingManager {
     };
   }
 
+  /** Итог главы 2: что сделал с резонатором, кто помог, кому отдан голос */
+  compute2() {
+    const g = this.g;
+    const f = g.gs.data.flags;
+    const outcome = f.c2_outcome || 'tape';
+    const O = {
+      shutdown: {
+        title: 'Тишина',
+        text: 'Ты опустил рубильник.\n\nГул стих. Кристаллы погасли один за другим, как окна в доме напротив. «Н. Ветров» покинул группу. Больше никто не стучал — ни в эту ночь, ни потом.\n\nНо дом забыл не только их.' + (f.zina_missing ? ' Зинаида Павловна так и не вернулась. Теперь — уже совсем.' : ' Утром Зинаида Павловна не узнала тебя на пороге. «Вы к кому, молодой человек?»'),
+        tease: 'В 9:00 военные начнут выводить жителей. В списке штаба значится «Ермаков К. А., кв. 47, десятый этаж».',
+      },
+      record: {
+        title: 'Голос дома',
+        text: 'Ты сказал в микрофон: «Не открывайте никому. Это Кирилл».\n\nТеперь это повторяют стены. В каждой квартире, из каждой вентиляции, твоим голосом. Соседи не откроют никому.\n\nДаже тебе.',
+        tease: 'Ночью в чат придёт сообщение от тебя: «я дома. я всегда был дома».',
+      },
+      tape: {
+        title: 'Доказательство',
+        text: 'Ты унёс плёнку. «Запись 14», двадцатое марта восемьдесят девятого.\n\nРезонатор остался гудеть внизу. Ему некуда спешить: у него девятнадцать голосов, и он учится новым.\n\nУтром ты попробуешь показать плёнку военным. Если до утра никто не постучит.',
+        tease: 'На катушке, на самом её конце, есть ещё одна запись. Она сделана сегодня. Голосом Саныча.',
+      },
+    }[outcome];
+    const word = (id) => g.rel.summary(id).word;
+    return {
+      chapterLabel: 'Глава 2 · Котельная',
+      title: O.title, text: O.text, tease: O.tease, outcome,
+      stats: [
+        ['Ключ от котельной', f.zina_missing ? 'взят у пустой квартиры' : 'от Зинаиды Павловны'],
+        ['Геннадий Борисович', f.c2_gena_help ? 'стерёг лифт' : f.c2_gena_hostile ? 'отключил лифт' : 'не вмешался'],
+        ['Рация Сони', g.inventory.has('walkie') ? 'была с тобой' : 'не досталась'],
+        ['Саныч', f.c2_sanych_gone ? 'исчез у стены' : 'не найден'],
+        ['Твой голос', f.c2_gave_voice || outcome === 'record' ? 'отдан дому' : 'сохранён — ты молчал'],
+        ['Плёнка 1984 года', f.c2_tape_heard ? 'прослушана' : 'не прослушана'],
+        ['Денис', word('denis')],
+        ['Найдено странностей', `${g.gs.data.story.clues.length} из ${Object.keys(CLUES).length}`],
+      ],
+    };
+  }
+
   show() {
     const g = this.g;
+    const chapter = g.gs.data.chapter || 1;
+    if (chapter === 2) return this.show2();
     if (g.gs.data.story.ending) return;
     const data = this.compute();
     g.gs.data.story.ending = data.outcome;
-    g.gs.data.chapter = 1;
+    g.gs.data.story.ch1Outcome = data.outcome;
     g.saves.save('auto', 'Конец главы 1');
+    g.saves.save('ch1end', 'Конец главы 1');
     g.hud.fade(true, 'Рассвет так и не наступил.\nНо ночь закончилась.').then(() => {
+      g.setMode('ending');
+      g.menus.showEnding(data, {
+        onMenu: () => g.toMainMenu(),
+        onNext: () => g.startChapter2(),
+        onKeepPlaying: () => { g.menus.hide(); g.setMode('play'); g.hud.fade(false); },
+      });
+    });
+  }
+
+  show2() {
+    const g = this.g;
+    if (g.gs.data.story.ending2) return;
+    const data = this.compute2();
+    g.gs.data.story.ending2 = data.outcome;
+    g.saves.save('auto', 'Конец главы 2');
+    g.hud.fade(true, 'Лифт остановился на шестом.\nДвери открылись в тишину.').then(() => {
       g.setMode('ending');
       g.menus.showEnding(data, {
         onMenu: () => g.toMainMenu(),

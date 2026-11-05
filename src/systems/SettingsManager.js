@@ -16,6 +16,7 @@ export const DEFAULT_SETTINGS = {
   quality: 'auto',          // auto | low | medium | high
   renderScale: 1,           // множитель разрешения поверх профиля
   adaptiveResolution: true,
+  fpsLimit: 60,             // 30 — режим энергосбережения
   sensitivity: 1,
   invertY: false,
   volMaster: 0.9,
